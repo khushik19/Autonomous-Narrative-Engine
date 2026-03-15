@@ -1,0 +1,38 @@
+# Virtual environment
+venv/
+env/
+.env/
+.venv/
+
+# Anaconda / conda
+*.conda
+conda-meta/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Environment variables (keep secrets out of git)
+.env
+.env.local
+
+# VS Code
+.vscode/
+
+# Flutter/Dart build files
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.g.dart
+
+# macOS
+.DS_Store

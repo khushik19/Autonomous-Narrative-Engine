@@ -1265,7 +1265,7 @@ class _MainLayoutState extends State<MainLayout>
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                'Hi. I am Narrativa.',
+                                'Hi. I am Cosmos.',
                                 style: GoogleFonts.archivoBlack(
                                   color: yellow,
                                   fontSize: 72,
@@ -1711,106 +1711,23 @@ class _MainLayoutState extends State<MainLayout>
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 48,
                                   ),
-                                  child: GridView.builder(
-                                    itemCount: _templates.length,
-                                    gridDelegate:
-                                        const SliverGridDelegateWithFixedCrossAxisCount(
-                                          crossAxisCount: 2,
-                                          crossAxisSpacing: 14,
-                                          mainAxisSpacing: 14,
-                                          childAspectRatio: 5.5, // CHANGED: was 3.8, cards were too tall on wider screens
-                                        ),
-                                    itemBuilder: (context, i) {
-                                      final t = _templates[i];
-                                      final selected = _selectedTemplate == i;
-                                      final previewPath = t['preview'] as String?;
-                                      final thumbUrl = previewPath != null ? 'http://127.0.0.1:8000/$previewPath' : null;
-                                      return GestureDetector(
-                                        onTap: () => setState(() {
-                                          _selectedTemplate = i;
-                                          _uploadedTemplateName = null;
-                                        }),
-                                        child: AnimatedContainer(
-                                          duration: const Duration(
-                                            milliseconds: 200,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: selected
-                                                ? yellow.withOpacity(0.12)
-                                                : Colors.white.withOpacity(
-                                                    0.05,
-                                                  ),
-                                            borderRadius: BorderRadius.circular(
-                                              12,
+                                  child: ListView.builder(
+                                    itemCount: (_templates.length / 2).ceil(),
+                                    itemBuilder: (context, rowIndex) {
+                                      final leftIndex = rowIndex * 2;
+                                      final rightIndex = leftIndex + 1;
+                                      return Padding(
+                                        padding: const EdgeInsets.only(bottom: 10),
+                                        child: Row(
+                                          children: [
+                                            Expanded(child: _templateCard(leftIndex)),
+                                            const SizedBox(width: 14),
+                                            Expanded(
+                                              child: rightIndex < _templates.length
+                                                  ? _templateCard(rightIndex)
+                                                  : const SizedBox(),
                                             ),
-                                            border: Border.all(
-                                              color: selected
-                                                  ? yellow
-                                                  : Colors.white12,
-                                              width: selected ? 2 : 1,
-                                            ),
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              // thumbnail or placeholder
-                                              ClipRRect(
-                                                borderRadius:
-                                                    const BorderRadius.only(
-                                                      topLeft: Radius.circular(
-                                                        10,
-                                                      ),
-                                                      bottomLeft:
-                                                          Radius.circular(10),
-                                                    ),
-                                                child: SizedBox( // CHANGED: was bare Image.network/placeholder, now wrapped in SizedBox to fill card height
-                                                  width: 70,
-                                                  height: double.infinity,
-                                                  child: thumbUrl != null
-                                                      ? Image.network(
-                                                          thumbUrl,
-                                                          fit: BoxFit.cover,
-                                                          errorBuilder:
-                                                              (_, __, ___) =>
-                                                                  _templatePlaceholder(
-                                                                    selected,
-                                                                  ),
-                                                        )
-                                                      : _templatePlaceholder(
-                                                          selected,
-                                                        ),
-                                                ),
-                                              ),
-                                              const SizedBox(width: 12),
-                                              Expanded(
-                                                child: Text(
-                                                  t['name'] as String? ??
-                                                      'Template ${i + 1}',
-                                                  style:
-                                                      GoogleFonts.archivoBlack(
-                                                        color: selected
-                                                            ? yellow
-                                                            : Colors.white70,
-                                                        fontSize: 13,
-                                                        fontWeight: selected
-                                                            ? FontWeight.bold
-                                                            : FontWeight.normal,
-                                                      ),
-                                                ),
-                                              ),
-                                              if (selected)
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                        right: 12,
-                                                      ),
-                                                  child: Icon(
-                                                    Icons.check_circle,
-                                                    color: yellow,
-                                                    size: 18,
-                                                  ),
-                                                ),
-                                            ],
-                                          ),
+                                          ],
                                         ),
                                       );
                                     },
@@ -2181,6 +2098,75 @@ class _MainLayoutState extends State<MainLayout>
         Icons.slideshow,
         color: selected ? yellow : Colors.white24,
         size: 24,
+      ),
+    );
+  }
+
+  Widget _templateCard(int i) {
+    final t = _templates[i];
+    final selected = _selectedTemplate == i;
+    final previewPath = t['preview'] as String?;
+    final thumbUrl = previewPath != null
+        ? 'http://127.0.0.1:8000/$previewPath'
+        : null;
+    return GestureDetector(
+      onTap: () => setState(() {
+        _selectedTemplate = i;
+        _uploadedTemplateName = null;
+      }),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        height: 64, // fixed height — never stretches regardless of screen size
+        decoration: BoxDecoration(
+          color: selected
+              ? yellow.withOpacity(0.12)
+              : Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected ? yellow : Colors.white12,
+            width: selected ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            // thumbnail or placeholder
+            ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(10),
+                bottomLeft: Radius.circular(10),
+              ),
+              child: SizedBox(
+                width: 70,
+                height: 64,
+                child: thumbUrl != null
+                    ? Image.network(
+                        thumbUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) =>
+                            _templatePlaceholder(selected),
+                      )
+                    : _templatePlaceholder(selected),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                t['name'] as String? ?? 'Template ${i + 1}',
+                style: GoogleFonts.archivoBlack(
+                  color: selected ? yellow : Colors.white70,
+                  fontSize: 13,
+                  fontWeight:
+                      selected ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+            ),
+            if (selected)
+              Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: Icon(Icons.check_circle, color: yellow, size: 18),
+              ),
+          ],
+        ),
       ),
     );
   }

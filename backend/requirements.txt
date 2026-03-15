@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+python-pptx
+matplotlib
+pillow
+python-multipart
+aiofiles
+requests

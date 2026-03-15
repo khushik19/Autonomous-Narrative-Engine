@@ -414,7 +414,7 @@ def add_textbox(slide, left_in, top_in, width_in, height_in,
 # So we can choose white or dark text
 # ─────────────────────────────────────
 
-def get_text_colors_for_slide(slide, slide_type: str):
+def get_text_colors_for_slide(slide, slide_type: str, registry_font_hex: str = "#0F172A"):
     """
     Returns (title_color, body_color, accent_color) as RGB tuples
     based on whether slide has a dark or light background
@@ -424,8 +424,12 @@ def get_text_colors_for_slide(slide, slide_type: str):
     if slide_type in DARK_BG_TYPES:
         return (255, 255, 255), (220, 230, 245), (100, 180, 255)
 
-    # Default: dark text on light/white background
-    return (15, 23, 42), (44, 62, 80), (0, 120, 200)
+    # Use registry font color for default
+    fh = registry_font_hex.lstrip("#")
+    font_rgb = tuple(int(fh[i:i+2], 16) for i in (0, 2, 4))
+    
+    # Body color slightly lighter/different if registry color is dark, otherwise same
+    return font_rgb, font_rgb, (0, 120, 200)
 
 
 # ─────────────────────────────────────
@@ -435,7 +439,7 @@ def get_text_colors_for_slide(slide, slide_type: str):
 # ─────────────────────────────────────
 
 def build_slide_content(slide, slide_data: dict, layout: dict,
-                        accent_hex: str, slide_w: float, slide_h: float,
+                        accent_hex: str, font_hex: str, slide_w: float, slide_h: float,
                         template_positions: dict = None):
     """
     Adds clean textboxes and charts to the slide.
@@ -467,7 +471,7 @@ def build_slide_content(slide, slide_data: dict, layout: dict,
     body_font  = font_theme["body"]
 
     # Text colors
-    title_color, body_color, _ = get_text_colors_for_slide(slide, slide_type)
+    title_color, body_color, _ = get_text_colors_for_slide(slide, slide_type, font_hex)
 
     # Margins as fractions of slide size
     margin_l = 0.05   # 5% from left
@@ -755,6 +759,7 @@ def run(
 
     # ── Pick template ──
     accent_color = "#00A8E8"
+    font_color   = "#0F172A"
     template_path = None
 
     # Handle "random" or None template_id
@@ -770,6 +775,7 @@ def run(
     elif template_id and template_id in TEMPLATES:
         template_path = os.path.join(base_dir, TEMPLATES[template_id]["file"])
         accent_color  = TEMPLATES[template_id].get("accent_color", "#00A8E8")
+        font_color    = TEMPLATES[template_id].get("font_color", "#0F172A")
         print(f"Using template: {TEMPLATES[template_id]['name']}")
 
     else:
@@ -779,6 +785,7 @@ def run(
             template_id = random.choice(fallback_templates)
             template_path = os.path.join(base_dir, TEMPLATES[template_id]["file"])
             accent_color = TEMPLATES[template_id].get("accent_color", "#00A8E8")
+            font_color   = TEMPLATES[template_id].get("font_color", "#0F172A")
             print(f"Using fallback user template: {template_id}")
         else:
             # Fixed absolute fallback
@@ -840,6 +847,7 @@ def run(
             slide_data         = slide_data,
             layout             = layout,
             accent_hex         = accent_color,
+            font_hex           = font_color,
             slide_w            = slide_w,
             slide_h            = slide_h,
             template_positions = template_positions,

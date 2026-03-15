@@ -13,4 +13,3 @@ peft
 accelerate
 google-generativeai
 duckduckgo-search
-ddgs

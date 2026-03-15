@@ -186,11 +186,12 @@ class _AsteroidGameState extends State<AsteroidGame> {
   void _connectWebSocket() {
     try {
       final String? hostname = html.window.location.hostname;
-      final String host = (hostname == null || hostname == 'localhost' || hostname.isEmpty) 
-          ? '127.0.0.1' 
+      final String host =
+          (hostname == null || hostname == 'localhost' || hostname.isEmpty)
+          ? '127.0.0.1'
           : hostname;
       final String fullWsUrl = 'ws://$host:8000/ws/generate';
-      
+
       print("--- [WebSocket] Connecting to $fullWsUrl ---");
       _socket = html.WebSocket(fullWsUrl);
 
@@ -230,7 +231,9 @@ class _AsteroidGameState extends State<AsteroidGame> {
             widget.onGenerationComplete!();
           }
         } else if (data['type'] == 'error') {
-          print("--- [WebSocket] Received ERROR message: ${data['message']} ---");
+          print(
+            "--- [WebSocket] Received ERROR message: ${data['message']} ---",
+          );
           setState(() {
             _hasError = true;
             _errorMessage = data['message'] as String?;
@@ -242,9 +245,11 @@ class _AsteroidGameState extends State<AsteroidGame> {
         print("--- [WebSocket] Error: $e ---");
         debugPrint('WebSocket error: $e');
       });
-      
+
       _socket!.onClose.listen((e) {
-        print("--- [WebSocket] Closed. Code: ${e.code}, Reason: ${e.reason} ---");
+        print(
+          "--- [WebSocket] Closed. Code: ${e.code}, Reason: ${e.reason} ---",
+        );
         debugPrint('WebSocket closed');
         if (!generationDone && !_hasError) {
           print("--- [WebSocket] Retrying in 2s... ---");
@@ -677,7 +682,11 @@ class _AsteroidGameState extends State<AsteroidGame> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.error_outline, color: Colors.red, size: 64),
+                        const Icon(
+                          Icons.error_outline,
+                          color: Colors.red,
+                          size: 64,
+                        ),
                         const SizedBox(height: 16),
                         Text(
                           'Oops! Something went wrong',
@@ -690,7 +699,10 @@ class _AsteroidGameState extends State<AsteroidGame> {
                         const SizedBox(height: 12),
                         Text(
                           _errorMessage ?? 'Unknown error occurred.',
-                          style: const TextStyle(color: Colors.white70, fontSize: 14),
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                          ),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 32),
@@ -755,8 +767,9 @@ class _AsteroidGameState extends State<AsteroidGame> {
                               onPressed: () {
                                 if (_pdfBase64 == null) return;
                                 html.AnchorElement(
-                                  href: 'data:application/pdf;base64,$_pdfBase64',
-                                )
+                                    href:
+                                        'data:application/pdf;base64,$_pdfBase64',
+                                  )
                                   ..setAttribute('download', 'presentation.pdf')
                                   ..click();
                               },
@@ -784,9 +797,12 @@ class _AsteroidGameState extends State<AsteroidGame> {
                                 final mime =
                                     'application/vnd.openxmlformats-officedocument.presentationml.presentation';
                                 html.AnchorElement(
-                                  href: 'data:$mime;base64,$_pptxBase64',
-                                )
-                                  ..setAttribute('download', 'presentation.pptx')
+                                    href: 'data:$mime;base64,$_pptxBase64',
+                                  )
+                                  ..setAttribute(
+                                    'download',
+                                    'presentation.pptx',
+                                  )
                                   ..click();
                               },
                               icon: const Icon(Icons.slideshow, size: 18),
@@ -1203,16 +1219,17 @@ class _MainLayoutState extends State<MainLayout>
   }
 
   Map<String, dynamic> _buildPayload() => {
-        "topic": _topicController.text.trim(),
-        "deck_style": _isDetailed ? "detailed" : "concise",
-        "num_slides": _slideCount.round(),
-        "template_id":
-            _selectedTemplate >= 0 ? _templates[_selectedTemplate]['id'] : null,
-        if (_uploadedTemplateBytes != null)
-          "template_bytes": base64Encode(_uploadedTemplateBytes!),
-        if (_uploadedPdfBytes != null)
-          "pdf_bytes": base64Encode(_uploadedPdfBytes!),
-      };
+    "topic": _topicController.text.trim(),
+    "deck_style": _isDetailed ? "detailed" : "concise",
+    "num_slides": _slideCount.round(),
+    "template_id": _selectedTemplate >= 0
+        ? _templates[_selectedTemplate]['id']
+        : null,
+    if (_uploadedTemplateBytes != null)
+      "template_bytes": base64Encode(_uploadedTemplateBytes!),
+    if (_uploadedPdfBytes != null)
+      "pdf_bytes": base64Encode(_uploadedPdfBytes!),
+  };
 
   void _onGenerate() {
     setState(() {
@@ -1717,13 +1734,18 @@ class _MainLayoutState extends State<MainLayout>
                                       final leftIndex = rowIndex * 2;
                                       final rightIndex = leftIndex + 1;
                                       return Padding(
-                                        padding: const EdgeInsets.only(bottom: 10),
+                                        padding: const EdgeInsets.only(
+                                          bottom: 10,
+                                        ),
                                         child: Row(
                                           children: [
-                                            Expanded(child: _templateCard(leftIndex)),
+                                            Expanded(
+                                              child: _templateCard(leftIndex),
+                                            ),
                                             const SizedBox(width: 14),
                                             Expanded(
-                                              child: rightIndex < _templates.length
+                                              child:
+                                                  rightIndex < _templates.length
                                                   ? _templateCard(rightIndex)
                                                   : const SizedBox(),
                                             ),
@@ -1743,8 +1765,8 @@ class _MainLayoutState extends State<MainLayout>
                               // upload template
                               GestureDetector(
                                 onTap: () async {
-                                  final result =
-                                      await FilePicker.platform.pickFiles(
+                                  final result = await FilePicker.platform
+                                      .pickFiles(
                                         type: FileType.custom,
                                         allowedExtensions: ['pptx'],
                                         withData: true,
@@ -1817,8 +1839,8 @@ class _MainLayoutState extends State<MainLayout>
                               // PDF upload
                               GestureDetector(
                                 onTap: () async {
-                                  final result =
-                                      await FilePicker.platform.pickFiles(
+                                  final result = await FilePicker.platform
+                                      .pickFiles(
                                         type: FileType.custom,
                                         allowedExtensions: ['pdf'],
                                         withData: true,
@@ -2055,11 +2077,13 @@ class _MainLayoutState extends State<MainLayout>
           if (_isGenerating || _showGame)
             Positioned.fill(
               child: Offstage(
-                offstage: !_showGame, // keeps the backend connection alive while hidden
+                offstage:
+                    !_showGame, // keeps the backend connection alive while hidden
                 child: AsteroidGame(
                   key: _gameKey,
                   onGameEnd: _onGameEnd,
-                  onStatusUpdate: (idx) => setState(() => _backendStatusIndex = idx),
+                  onStatusUpdate: (idx) =>
+                      setState(() => _backendStatusIndex = idx),
                   onGenerationComplete: () => setState(() {
                     _showPopup = false;
                     _showGame = true;
@@ -2155,8 +2179,7 @@ class _MainLayoutState extends State<MainLayout>
                 style: GoogleFonts.archivoBlack(
                   color: selected ? yellow : Colors.white70,
                   fontSize: 13,
-                  fontWeight:
-                      selected ? FontWeight.bold : FontWeight.normal,
+                  fontWeight: selected ? FontWeight.bold : FontWeight.normal,
                 ),
               ),
             ),

@@ -79,7 +79,7 @@ async def generate(
         
         # Run all 3 agents
         from pipeline import run_pipeline
-        output_path = run_pipeline(
+        output_path, sources = run_pipeline(
             topic                = topic,
             template_id          = template_id,
             custom_template_path = custom_path
@@ -152,7 +152,7 @@ async def websocket_generate(websocket: WebSocket):
 
         # 3. Run Pipeline in a THREAD so we don't block the event loop
         from pipeline import run_pipeline
-        output_path = await loop.run_in_executor(
+        output_path, sources = await loop.run_in_executor(
             _pipeline_executor,
             lambda: run_pipeline(
                 topic=topic,
@@ -189,9 +189,7 @@ async def websocket_generate(websocket: WebSocket):
             "type": "done",
             "pptx_base64": pptx_b64,
             "pdf_base64": pdf_b64,
-            "sources": [
-                f"https://www.google.com/search?q={topic.replace(' ', '+')}"
-            ]
+            "sources": sources
         })
         
     except WebSocketDisconnect:

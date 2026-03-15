@@ -1096,7 +1096,7 @@ class _MainLayoutState extends State<MainLayout>
                                               decoration:
                                                   const InputDecoration(
                                                 hintText:
-                                                    'Enter a story topic...',
+                                                    'Enter your presentation topic...',
                                                 hintStyle: TextStyle(
                                                     color: Colors.black45),
                                                 filled: true,

@@ -41,9 +41,7 @@ class NarrativaApp extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────
-// DATA MODELS
-// ─────────────────────────────────────────────
+// data models
 
 class Bullet {
   double x, y;
@@ -62,9 +60,7 @@ class Particle {
       : maxLife = life;
 }
 
-// ─────────────────────────────────────────────
-// SOURCES SCREEN
-// ─────────────────────────────────────────────
+// sources screen
 
 class SourcesScreen extends StatelessWidget {
   final List<String> sources;
@@ -117,9 +113,7 @@ class SourcesScreen extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────
-// ASTEROID GAME WIDGET
-// ─────────────────────────────────────────────
+// asteroid
 
 class AsteroidGame extends StatefulWidget {
   final VoidCallback onGameEnd;
@@ -154,11 +148,11 @@ class _AsteroidGameState extends State<AsteroidGame> {
 
   int _statusIndex = 0;
   static const List<String> _statusMessages = [
-    '🔍 Inferring search queries...',
-    '🌐 Scraping live web data...',
-    '🧠 Synthesizing narrative...',
-    '⚖️ Fact-checking claims...',
-    '🎨 Generating visual assets...',
+    'Inferring search queries...',
+    'Scraping live web data...',
+    'Synthesizing narrative...',
+    'Fact-checking claims...',
+    'Generating visual assets...',
   ];
 
   List<String> _liveSources = [];
@@ -198,7 +192,6 @@ class _AsteroidGameState extends State<AsteroidGame> {
       _socket = html.WebSocket(_wsUrl);
 
       _socket!.onOpen.listen((_) {
-        // Send payload once connection is open
         _socket!.send(jsonEncode(widget.payload));
       });
 
@@ -226,7 +219,6 @@ class _AsteroidGameState extends State<AsteroidGame> {
       _socket!.onClose.listen((_) => debugPrint('WebSocket closed'));
     } catch (e) {
       debugPrint('WebSocket connection failed: $e');
-      // Game keeps running without status updates
     }
   }
 
@@ -262,7 +254,7 @@ class _AsteroidGameState extends State<AsteroidGame> {
       if (_leftDown) shipX = (shipX - shipSpeed).clamp(0.05, 0.95);
       if (_rightDown) shipX = (shipX + shipSpeed).clamp(0.05, 0.95);
 
-      // Auto-fire — always shoots, no button needed
+      // auto fire
       if (_shootCooldown <= 0) {
         bullets.add(Bullet(shipX, shipY - 0.05));
         _shootCooldown = 0.3;
@@ -304,7 +296,6 @@ class _AsteroidGameState extends State<AsteroidGame> {
       }
       particles.removeWhere((p) => p.life <= 0);
 
-      // Ship-asteroid collision — find hit outside loop then remove safely
       Asteroid? hitByShip;
       for (final a in asteroids) {
         final dx = (shipX - a.x).abs();
@@ -384,7 +375,7 @@ class _AsteroidGameState extends State<AsteroidGame> {
         color: Colors.black,
         child: Stack(
           children: [
-            // ── Game canvas ──────────────────────────────────────
+            // game
             LayoutBuilder(builder: (context, constraints) {
               final w = constraints.maxWidth;
               final h = constraints.maxHeight;
@@ -450,7 +441,6 @@ class _AsteroidGameState extends State<AsteroidGame> {
                     child: const _ShipWidget(color: yellow),
                   ),
 
-                  // HUD
                   Positioned(
                     top: 20,
                     left: 20,
@@ -474,7 +464,7 @@ class _AsteroidGameState extends State<AsteroidGame> {
                     ),
                   ),
 
-                  // Dynamic status tracker
+                  // status tracker
                   Positioned(
                     top: 20,
                     right: 20,
@@ -536,7 +526,7 @@ class _AsteroidGameState extends State<AsteroidGame> {
               );
             }),
 
-            // ── Controls ──
+            // game buttons
             Positioned(
               bottom: 24,
               left: 0,
@@ -559,7 +549,7 @@ class _AsteroidGameState extends State<AsteroidGame> {
               ),
             ),
 
-            // ── Game Over overlay ──
+            // game over
             if (gameOver)
               Container(
                 color: Colors.black87,
@@ -598,7 +588,7 @@ class _AsteroidGameState extends State<AsteroidGame> {
                 ),
               ),
 
-            // ── Generation Done overlay ──
+            // generated
             if (generationDone)
               Container(
                 color: const Color(0xEE000000),
@@ -620,7 +610,7 @@ class _AsteroidGameState extends State<AsteroidGame> {
                                 color: Colors.white, fontSize: 18)),
                         const SizedBox(height: 28),
 
-                        // Download buttons
+                        // download buttons
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -662,7 +652,7 @@ class _AsteroidGameState extends State<AsteroidGame> {
                           ],
                         ),
 
-                        // Sources preview (max 3)
+                        // sources 
                         if (_liveSources.isNotEmpty) ...[
                           const SizedBox(height: 24),
                           Container(
@@ -726,7 +716,7 @@ class _AsteroidGameState extends State<AsteroidGame> {
                                         ),
                                       ),
                                     )),
-                                // "View all" inline if <= 3 sources too
+                                // view all
                                 if (_liveSources.length <= 3)
                                   GestureDetector(
                                     onTap: () => Navigator.push(
@@ -773,9 +763,7 @@ class _AsteroidGameState extends State<AsteroidGame> {
   }
 }
 
-// ─────────────────────────────────────────────
-// SHIP
-// ─────────────────────────────────────────────
+// ship
 
 class _ShipWidget extends StatelessWidget {
   final Color color;
@@ -812,9 +800,7 @@ class _ShipPainter extends CustomPainter {
   bool shouldRepaint(_) => false;
 }
 
-// ─────────────────────────────────────────────
-// ASTEROID
-// ─────────────────────────────────────────────
+// asteroid
 
 class _AsteroidWidget extends StatelessWidget {
   final double size;
@@ -855,10 +841,7 @@ class _AsteroidPainter extends CustomPainter {
   bool shouldRepaint(_) => false;
 }
 
-// ─────────────────────────────────────────────
-// STARS
-// ─────────────────────────────────────────────
-
+// stars
 class _StarsPainter extends CustomPainter {
   final List<Offset> _stars =
       List.generate(80, (_) => Offset(Random().nextDouble(), Random().nextDouble()));
@@ -875,9 +858,7 @@ class _StarsPainter extends CustomPainter {
   bool shouldRepaint(_) => false;
 }
 
-// ─────────────────────────────────────────────
-// GAME BUTTON
-// ─────────────────────────────────────────────
+// game button
 
 class _GameButton extends StatelessWidget {
   final IconData icon;
@@ -921,9 +902,7 @@ class _GameButton extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────
-// MAIN LAYOUT
-// ─────────────────────────────────────────────
+// main layout
 
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
@@ -947,13 +926,11 @@ class _MainLayoutState extends State<MainLayout>
   bool _showPopup = false;
   bool _isDetailed = false;
   double _slideCount = 8;
-  int _selectedTemplate = -1;      // index into _templates, -2 = uploaded own
+  int _selectedTemplate = -1;      
   String? _uploadedTemplateName;
   String? _uploadedPdfName;
 
-  // Populated from backend — each map has "id", "label", "thumbnail_url"
-  // Your backend should return JSON like:
-  // [{"id":"t1","label":"Corporate Blue","thumbnail_url":"https://..."},...]
+  // json from backend
   List<Map<String, dynamic>> _templates = [];
   bool _templatesLoading = true;
   String? _templatesError;
@@ -962,7 +939,7 @@ class _MainLayoutState extends State<MainLayout>
     {"name": "Khushi",    "desc": "Fits the Flutter",          "image": "assets/images/khushi.jpg"},
     {"name": "Achal",     "desc": "Presents the Presentations", "image": "assets/images/achal.jpg"},
     {"name": "Deepanshi", "desc": "Copies the Writes",          "image": "assets/images/deepanshi.jpg"},
-    {"name": "Vanshvi",   "desc": "idk who",                    "image": "assets/images/vanshvi.jpg"},
+    {"name": "Vanshvi",   "desc": "Researches the Web",                    "image": "assets/images/vanshvi.jpg"},
   ];
 
   @override
@@ -1071,7 +1048,7 @@ class _MainLayoutState extends State<MainLayout>
             controller: _scrollController,
             child: Column(
               children: [
-                // ── Page 1 ──────────────────────────────────────
+                // page 1
                 SizedBox(
                   height: screenHeight,
                   width: double.infinity,
@@ -1101,7 +1078,7 @@ class _MainLayoutState extends State<MainLayout>
                                   crossAxisAlignment:
                                       CrossAxisAlignment.start,
                                   children: [
-                                    // Topic + Generate
+                                    // topic & generate
                                     IntrinsicHeight(
                                       child: Row(
                                         crossAxisAlignment:
@@ -1202,7 +1179,7 @@ class _MainLayoutState extends State<MainLayout>
 
                                     const SizedBox(height: 16),
 
-                                    // Deck Style toggle
+                                    // deck style toggle
                                     Container(
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 16, vertical: 12),
@@ -1268,7 +1245,7 @@ class _MainLayoutState extends State<MainLayout>
 
                                     const SizedBox(height: 12),
 
-                                    // Slide count slider
+                                    // slide count slider
                                     Container(
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 16, vertical: 10),
@@ -1335,7 +1312,7 @@ class _MainLayoutState extends State<MainLayout>
                         ),
                       ),
 
-                      // Bounce arrow
+                      // bounce arrow
                       Positioned(
                         bottom: 36,
                         left: 0,
@@ -1374,7 +1351,7 @@ class _MainLayoutState extends State<MainLayout>
                   ),
                 ),
 
-                // ── Page 2: Template + PDF ───────────────────────
+                // page 2
                 SizedBox(
                   height: screenHeight,
                   width: double.infinity,
@@ -1423,7 +1400,7 @@ class _MainLayoutState extends State<MainLayout>
                           ),
                         ),
 
-                        // Scrollable template grid
+                        // scrollable template grid
                         Expanded(
                           child: _templatesLoading
                               ? const Center(
@@ -1501,7 +1478,7 @@ class _MainLayoutState extends State<MainLayout>
                                               ),
                                               child: Row(
                                                 children: [
-                                                  // Thumbnail or placeholder
+                                                  // thumbnail or placeholder
                                                   ClipRRect(
                                                     borderRadius:
                                                         const BorderRadius.only(
@@ -1560,13 +1537,12 @@ class _MainLayoutState extends State<MainLayout>
                                     ),
                         ),
 
-                        // Fixed bottom section
                         Padding(
                           padding: const EdgeInsets.fromLTRB(48, 12, 48, 20),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Upload own template
+                              // upload template
                               GestureDetector(
                                 onTap: () {
                                   // TODO: file picker for .pptx
@@ -1685,7 +1661,7 @@ class _MainLayoutState extends State<MainLayout>
 
                               const SizedBox(height: 14),
 
-                              // Generate button
+                              // generate button
                               SizedBox(
                                 width: double.infinity,
                                 child: ElevatedButton.icon(
@@ -1710,7 +1686,7 @@ class _MainLayoutState extends State<MainLayout>
 
                               const SizedBox(height: 16),
 
-                              // Meet the Creators bounce arrow
+                              // meet the Creators bounce arrow
                               Center(
                                 child: GestureDetector(
                                   onTap: _scrollToBuiltBy,
@@ -1752,7 +1728,7 @@ class _MainLayoutState extends State<MainLayout>
                   ),
                 ),
 
-                // ── Page 3: Built By ─────────────────────────────
+                // page 3
                 SizedBox(
                   height: screenHeight,
                   width: double.infinity,
@@ -1804,7 +1780,7 @@ class _MainLayoutState extends State<MainLayout>
             ),
           ),
 
-          // ── Generating popup ──
+          // generating pop up
           if (_showPopup)
             Positioned.fill(
               child: _GeneratingPopup(
@@ -1819,7 +1795,7 @@ class _MainLayoutState extends State<MainLayout>
               ),
             ),
 
-          // ── Game overlay ──
+          // game overlay
           if (_showGame)
             Positioned.fill(
               child: AsteroidGame(
@@ -1880,9 +1856,7 @@ class _MainLayoutState extends State<MainLayout>
   }
 }
 
-// ─────────────────────────────────────────────
-// GENERATING POPUP
-// ─────────────────────────────────────────────
+// generating pop up
 
 class _GeneratingPopup extends StatefulWidget {
   final List<String> statusMessages;
@@ -1960,7 +1934,7 @@ class _GeneratingPopupState extends State<_GeneratingPopup> {
               ),
               const SizedBox(height: 28),
 
-              // Status steps
+              // status steps
               ...List.generate(widget.statusMessages.length, (i) {
                 final isDone = i < _statusIndex;
                 final isActive = i == _statusIndex;
@@ -2002,7 +1976,7 @@ class _GeneratingPopupState extends State<_GeneratingPopup> {
               const SizedBox(height: 32),
 
               if (!_waiting) ...[
-                // Play game button
+                // play game button
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
@@ -2031,7 +2005,7 @@ class _GeneratingPopupState extends State<_GeneratingPopup> {
                   ),
                 ),
               ] else ...[
-                // Waiting mode — just a small "changed my mind" link
+                // waiting mode — just a small "changed my mind" link
                 TextButton.icon(
                   onPressed: () => setState(() => _waiting = false),
                   icon: const Icon(Icons.sports_esports,

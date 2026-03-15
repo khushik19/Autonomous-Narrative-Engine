@@ -67,6 +67,7 @@ async def generate(
     print(f"New POST request — Topic: {topic}, Template: {template_id}")
     
     custom_path = None
+    pdf_path = None
     
     try:
         # Save uploaded template if user sent one
@@ -102,6 +103,8 @@ async def generate(
         # Clean up uploaded template
         if custom_path and os.path.exists(custom_path):
             os.remove(custom_path)
+        if pdf_path and os.path.exists(pdf_path):
+            os.remove(pdf_path)
 
 
 # ── MAIN: Generate presentation via WebSocket ──
@@ -110,6 +113,7 @@ async def websocket_generate(websocket: WebSocket):
     await websocket.accept()
     print("New WebSocket connection accepted on /ws/generate")
     custom_path = None
+    pdf_path = None
     try:
         # 1. Receive JSON payload
         data_str = await websocket.receive_text()
@@ -117,8 +121,11 @@ async def websocket_generate(websocket: WebSocket):
         topic = payload.get("topic") or "Default Topic"
         template_id = payload.get("template_id") or "modern_blue"
         template_bytes_b64 = payload.get("template_bytes")
+        deck_style = payload.get("deck_style") or "concise"
+        num_slides = payload.get("num_slides") or 8
+        pdf_bytes_b64 = payload.get("pdf_bytes")
         
-        print(f"WebSocket request — Topic: {topic}, Template: {template_id}")
+        print(f"--- [Server] WebSocket request — Topic: {topic}, Template: {template_id}, Style: {deck_style}, Slides: {num_slides} ---")
         
         # Parse uploaded template bytes if they exist
         if template_bytes_b64:
@@ -126,55 +133,79 @@ async def websocket_generate(websocket: WebSocket):
             custom_path = f"temp/ws_uploaded_temp_{topic[:10].replace(' ', '_')}.pptx"
             with open(custom_path, "wb") as f:
                 f.write(base64.b64decode(template_bytes_b64))
-                
-        # 2. Send status updates
-        await websocket.send_json({"type": "status", "index": 0})
-        await asyncio.sleep(0.5)
         
-        await websocket.send_json({"type": "status", "index": 1})
-        await asyncio.sleep(0.5)
+        # Parse uploaded PDF bytes if they exist
+        if pdf_bytes_b64:
+            os.makedirs("temp", exist_ok=True)
+            pdf_path = f"temp/ws_uploaded_notes_{topic[:10].replace(' ', '_')}.pdf"
+            with open(pdf_path, "wb") as f:
+                f.write(base64.b64decode(pdf_bytes_b64))
         
-        await websocket.send_json({"type": "status", "index": 2})
-        
+        # Bridge progress updates back to the event loop
+        loop = asyncio.get_event_loop()
+        def status_callback(idx, msg):
+            print(f"--- [Server] Progress {idx}: {msg} ---")
+            asyncio.run_coroutine_threadsafe(
+                websocket.send_json({"type": "status", "index": idx}),
+                loop
+            )
+
         # 3. Run Pipeline in a THREAD so we don't block the event loop
         from pipeline import run_pipeline
-        loop = asyncio.get_event_loop()
         output_path = await loop.run_in_executor(
             _pipeline_executor,
             lambda: run_pipeline(
                 topic=topic,
                 template_id=template_id,
-                custom_template_path=custom_path
+                custom_template_path=custom_path,
+                deck_style=deck_style,
+                num_slides=num_slides,
+                pdf_path=pdf_path,
+                status_callback=status_callback
             )
         )
         
-        # 4. Synthesize Fact-checking / Generating Visuals
-        await websocket.send_json({"type": "status", "index": 3})
-        await asyncio.sleep(1)
-        await websocket.send_json({"type": "status", "index": 4})
-        
+        if not output_path or not os.path.exists(output_path):
+            print("--- [Server] Error: Pipeline failed to produce result ---")
+            await websocket.send_json({"type": "error", "message": "Generation failed"})
+            return
+
         # 5. Convert final output to Base64
+        print(f"--- [Server] Generation finished: {output_path} ---")
         with open(output_path, "rb") as f:
             pptx_bytes = f.read()
         pptx_b64 = base64.b64encode(pptx_bytes).decode("utf-8")
         
-        # 6. Send Done message with Base64 PPTX
+        # Convert PDF if exists
+        pdf_path = output_path.replace(".pptx", ".pdf")
+        pdf_b64 = ""
+        if os.path.exists(pdf_path):
+            with open(pdf_path, "rb") as f:
+                pdf_b64 = base64.b64encode(f.read()).decode("utf-8")
+
+        # 6. Send Done message with Base64 payloads
+        print("--- [Server] Sending DONE message ---")
         await websocket.send_json({
             "type": "done",
+            "pptx_base64": pptx_b64,
+            "pdf_base64": pdf_b64,
             "sources": [
-                f"https://en.wikipedia.org/wiki/{topic.replace(' ', '_')}",
                 f"https://www.google.com/search?q={topic.replace(' ', '+')}"
-            ],
-            "pdf_base64": "", # PDF not yet supported by pipeline
-            "pptx_base64": pptx_b64
+            ]
         })
         
     except WebSocketDisconnect:
-        print("WebSocket client disconnected")
+        print("--- [Server] WebSocket client disconnected ---")
     except Exception as e:
-        print(f"WebSocket Error: {e}")
-        # Could send error message if required, but standard is just closing
+        print(f"--- [Server] WebSocket Error: {e} ---")
+        import traceback
+        traceback.print_exc()
+        try:
+            await websocket.send_json({"type": "error", "message": str(e)})
+        except:
+            pass
     finally:
+        print("--- [Server] Closing WebSocket and cleaning up ---")
         # Clean up uploaded template
         if custom_path and os.path.exists(custom_path):
             os.remove(custom_path)

@@ -17,7 +17,11 @@ def get_temp_path(request_id: str, filename: str) -> str:
 def run_pipeline(
     topic: str,
     template_id: str = "Bold Text and Color Morph Product Launch Presentation",
-    custom_template_path: str = None
+    custom_template_path: str = None,
+    deck_style: str = "detailed",
+    num_slides: int = 8,
+    pdf_path: str = None,
+    status_callback: callable = None
 ) -> str:
     """
     Runs all 3 agents in order
@@ -26,7 +30,13 @@ def run_pipeline(
     topic:                what user typed
     template_id:          which built-in template to use
     custom_template_path: path to uploaded .pptx (if user uploaded one)
+    deck_style:           'concise' or 'detailed'
+    num_slides:           target number of slides
+    pdf_path:             path to uploaded notes (PDF)
+    status_callback:      function(index, message) to send real-time updates
     """
+    if status_callback:
+        status_callback(0, "Initializing process...")
     
     # Unique ID for this request
     request_id = str(uuid.uuid4())[:8]
@@ -43,6 +53,8 @@ def run_pipeline(
     # ─────────────────────────────────────
     
     print("\n[1/3] Running Research Agent...")
+    if status_callback:
+        status_callback(1, "Researching topic and gathering facts...")
     
     # Path where research agent will save its output
     research_output_path = get_temp_path(request_id, "research.txt")
@@ -53,7 +65,10 @@ def run_pipeline(
     # Call their function
     research_agent.run(
         topic       = topic,
-        output_path = research_output_path
+        output_path = research_output_path,
+        deck_style  = deck_style,
+        num_slides  = num_slides,
+        pdf_path    = pdf_path
     )
     
     # Make sure file was created
@@ -70,6 +85,8 @@ def run_pipeline(
     # ─────────────────────────────────────
     
     print("\n[2/3] Running Copywriter Agent...")
+    if status_callback:
+        status_callback(2, "Writing slide content and structure...")
     
     # Path where copywriter agent will save its output
     content_output_path = get_temp_path(request_id, "content.json")
@@ -97,6 +114,8 @@ def run_pipeline(
     # ─────────────────────────────────────
     
     print("\n[3/3] Running Visual Designer Agent...")
+    if status_callback:
+        status_callback(3, "Generating visuals and designing slides...")
     
     # Read the content.json that copywriter made
     with open(content_output_path, "r") as f:
@@ -119,6 +138,8 @@ def run_pipeline(
     if not os.path.exists(pptx_output_path):
         raise Exception("Visual agent did not create presentation.pptx")
     
+    if status_callback:
+        status_callback(4, "Finalizing presentation and exporting...")
     print(f"\nPresentation ready: {pptx_output_path}")
     return pptx_output_path
 

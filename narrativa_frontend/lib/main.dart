@@ -947,6 +947,16 @@ class _MainLayoutState extends State<MainLayout>
   bool _showPopup = false;
   bool _isDetailed = false;
   double _slideCount = 8;
+  int _selectedTemplate = -1;      // index into _templates, -2 = uploaded own
+  String? _uploadedTemplateName;
+  String? _uploadedPdfName;
+
+  // Populated from backend — each map has "id", "label", "thumbnail_url"
+  // Your backend should return JSON like:
+  // [{"id":"t1","label":"Corporate Blue","thumbnail_url":"https://..."},...]
+  List<Map<String, dynamic>> _templates = [];
+  bool _templatesLoading = true;
+  String? _templatesError;
 
   final List<Map<String, String>> creators = [
     {"name": "Khushi",    "desc": "Fits the Flutter",          "image": "assets/images/khushi.jpg"},
@@ -965,6 +975,40 @@ class _MainLayoutState extends State<MainLayout>
     _bounceAnimation = Tween<double>(begin: 0, end: 10).animate(
       CurvedAnimation(parent: _bounceController, curve: Curves.easeInOut),
     );
+    _fetchTemplates();
+  }
+
+  Future<void> _fetchTemplates() async {
+    try {
+      // TODO: replace with your real backend URL
+      // final uri = Uri.parse('http://your-backend/templates');
+      // final res = await http.get(uri);
+      // final list = jsonDecode(res.body) as List;
+      // setState(() {
+      //   _templates = list.map((e) => Map<String, dynamic>.from(e)).toList();
+      //   _templatesLoading = false;
+      // });
+
+      // ── Simulated response — remove once backend is ready ──
+      await Future.delayed(const Duration(milliseconds: 800));
+      setState(() {
+        _templates = List.generate(9, (i) => {
+          "id": "t$i",
+          "label": [
+            "Corporate Blue", "Dark Minimal", "Bold & Vibrant",
+            "Clean White", "Executive Navy", "Pastel Soft",
+            "Tech Neon", "Earthy Tones", "Gradient Mesh",
+          ][i],
+          "thumbnail_url": null, // replace with real URLs from backend
+        });
+        _templatesLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _templatesError = 'Could not load templates';
+        _templatesLoading = false;
+      });
+    }
   }
 
   @override
@@ -975,9 +1019,19 @@ class _MainLayoutState extends State<MainLayout>
     super.dispose();
   }
 
-  void _scrollToBuiltBy() {
+  void _scrollToTemplates() {
+    final h = MediaQuery.of(context).size.height;
     _scrollController.animateTo(
-      MediaQuery.of(context).size.height,
+      h,
+      duration: const Duration(milliseconds: 1000),
+      curve: Curves.easeInOutQuart,
+    );
+  }
+
+  void _scrollToBuiltBy() {
+    final h = MediaQuery.of(context).size.height;
+    _scrollController.animateTo(
+      h * 2,
       duration: const Duration(milliseconds: 1000),
       curve: Curves.easeInOutQuart,
     );
@@ -990,8 +1044,6 @@ class _MainLayoutState extends State<MainLayout>
       };
 
   void _onGenerate() {
-    final topic = _topicController.text.trim();
-    if (topic.isEmpty) return;
     setState(() => _showPopup = true);
   }
 
@@ -1061,8 +1113,9 @@ class _MainLayoutState extends State<MainLayout>
                                               style: const TextStyle(
                                                   color: Colors.black,
                                                   fontSize: 15),
-                                              onSubmitted: (_) =>
-                                                  _onGenerate(),
+                                              onSubmitted: (_) {
+                                                if (_topicController.text.trim().isNotEmpty) _scrollToTemplates();
+                                              },
                                               decoration:
                                                   const InputDecoration(
                                                 hintText:
@@ -1119,18 +1172,22 @@ class _MainLayoutState extends State<MainLayout>
                                                   Radius.circular(12),
                                             ),
                                             child: InkWell(
-                                              onTap: _onGenerate,
+                                              onTap: () {
+                                                final topic = _topicController.text.trim();
+                                                if (topic.isEmpty) return;
+                                                _scrollToTemplates();
+                                              },
                                               borderRadius:
                                                   const BorderRadius.only(
                                                 topRight: Radius.circular(12),
                                                 bottomRight:
                                                     Radius.circular(12),
                                               ),
-                                              child: Padding(
+                                            child: Padding(
                                                 padding: const EdgeInsets.symmetric(
                                                     horizontal: 24),
                                                 child: Center(
-                                                  child: Text('Generate',
+                                                  child: Text('Next →',
                                                       style: GoogleFonts.archivoBlack(
                                                           color: Colors.black,
                                                           fontWeight: FontWeight.bold,
@@ -1284,7 +1341,7 @@ class _MainLayoutState extends State<MainLayout>
                         left: 0,
                         right: 0,
                         child: GestureDetector(
-                          onTap: _scrollToBuiltBy,
+                          onTap: _scrollToTemplates,
                           child: AnimatedBuilder(
                             animation: _bounceAnimation,
                             builder: (context, child) => Transform.translate(
@@ -1294,7 +1351,7 @@ class _MainLayoutState extends State<MainLayout>
                             child: Column(
                               children: [
                                 Text(
-                                  'MEET THE CREATORS',
+                                  'CHOOSE TEMPLATE',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     color: yellow.withOpacity(0.75),
@@ -1317,7 +1374,385 @@ class _MainLayoutState extends State<MainLayout>
                   ),
                 ),
 
-                // ── Page 2: Built By ─────────────────────────────
+                // ── Page 2: Template + PDF ───────────────────────
+                SizedBox(
+                  height: screenHeight,
+                  width: double.infinity,
+                  child: Container(
+                    color: const Color(0xFF0D1117),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Fixed top bar
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(48, 32, 48, 0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              GestureDetector(
+                                onTap: () => _scrollController.animateTo(0,
+                                    duration: const Duration(milliseconds: 800),
+                                    curve: Curves.easeInOutQuart),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.arrow_back,
+                                        color: Colors.white54, size: 18),
+                                    const SizedBox(width: 6),
+                                    Text('Back',
+                                        style: GoogleFonts.archivoBlack(
+                                            color: Colors.white54,
+                                            fontSize: 13)),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              Text('Choose a Template',
+                                  style: GoogleFonts.archivoBlack(
+                                      color: Colors.white,
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${_templates.length} templates available',
+                                style: GoogleFonts.archivoBlack(
+                                    color: Colors.white38, fontSize: 12),
+                              ),
+                              const SizedBox(height: 14),
+                            ],
+                          ),
+                        ),
+
+                        // Scrollable template grid
+                        Expanded(
+                          child: _templatesLoading
+                              ? const Center(
+                                  child: CircularProgressIndicator(
+                                      color: yellow))
+                              : _templatesError != null
+                                  ? Center(
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(Icons.error_outline,
+                                              color: Colors.white38, size: 32),
+                                          const SizedBox(height: 8),
+                                          Text(_templatesError!,
+                                              style: GoogleFonts.archivoBlack(
+                                                  color: Colors.white38,
+                                                  fontSize: 13)),
+                                          const SizedBox(height: 12),
+                                          TextButton(
+                                            onPressed: () {
+                                              setState(() {
+                                                _templatesLoading = true;
+                                                _templatesError = null;
+                                              });
+                                              _fetchTemplates();
+                                            },
+                                            child: Text('Retry',
+                                                style:
+                                                    GoogleFonts.archivoBlack(
+                                                        color: yellow,
+                                                        fontSize: 13)),
+                                          ),
+                                        ],
+                                      ),
+                                    )
+                                  : Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 48),
+                                      child: GridView.builder(
+                                        itemCount: _templates.length,
+                                        gridDelegate:
+                                            const SliverGridDelegateWithFixedCrossAxisCount(
+                                          crossAxisCount: 2,
+                                          crossAxisSpacing: 14,
+                                          mainAxisSpacing: 14,
+                                          childAspectRatio: 2.6,
+                                        ),
+                                        itemBuilder: (context, i) {
+                                          final t = _templates[i];
+                                          final selected =
+                                              _selectedTemplate == i;
+                                          final thumbUrl =
+                                              t['thumbnail_url'] as String?;
+                                          return GestureDetector(
+                                            onTap: () => setState(() {
+                                              _selectedTemplate = i;
+                                              _uploadedTemplateName = null;
+                                            }),
+                                            child: AnimatedContainer(
+                                              duration: const Duration(
+                                                  milliseconds: 200),
+                                              decoration: BoxDecoration(
+                                                color: selected
+                                                    ? yellow.withOpacity(0.12)
+                                                    : Colors.white
+                                                        .withOpacity(0.05),
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                border: Border.all(
+                                                  color: selected
+                                                      ? yellow
+                                                      : Colors.white12,
+                                                  width: selected ? 2 : 1,
+                                                ),
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  // Thumbnail or placeholder
+                                                  ClipRRect(
+                                                    borderRadius:
+                                                        const BorderRadius.only(
+                                                      topLeft:
+                                                          Radius.circular(10),
+                                                      bottomLeft:
+                                                          Radius.circular(10),
+                                                    ),
+                                                    child: thumbUrl != null
+                                                        ? Image.network(
+                                                            thumbUrl,
+                                                            width: 72,
+                                                            fit: BoxFit.cover,
+                                                            errorBuilder: (_,
+                                                                    __,
+                                                                    ___) =>
+                                                                _templatePlaceholder(
+                                                                    selected),
+                                                          )
+                                                        : _templatePlaceholder(
+                                                            selected),
+                                                  ),
+                                                  const SizedBox(width: 12),
+                                                  Expanded(
+                                                    child: Text(
+                                                      t['label'] as String? ??
+                                                          'Template ${i + 1}',
+                                                      style: GoogleFonts
+                                                          .archivoBlack(
+                                                        color: selected
+                                                            ? yellow
+                                                            : Colors.white70,
+                                                        fontSize: 13,
+                                                        fontWeight: selected
+                                                            ? FontWeight.bold
+                                                            : FontWeight.normal,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  if (selected)
+                                                    Padding(
+                                                      padding:
+                                                          const EdgeInsets.only(
+                                                              right: 12),
+                                                      child: Icon(
+                                                          Icons.check_circle,
+                                                          color: yellow,
+                                                          size: 18),
+                                                    ),
+                                                ],
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                        ),
+
+                        // Fixed bottom section
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(48, 12, 48, 20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Upload own template
+                              GestureDetector(
+                                onTap: () {
+                                  // TODO: file picker for .pptx
+                                  setState(() {
+                                    _selectedTemplate = -2;
+                                    _uploadedTemplateName = 'my_template.pptx';
+                                  });
+                                },
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 12),
+                                  decoration: BoxDecoration(
+                                    color: _selectedTemplate == -2
+                                        ? yellow.withOpacity(0.1)
+                                        : Colors.white.withOpacity(0.04),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: _selectedTemplate == -2
+                                          ? yellow
+                                          : Colors.white12,
+                                      width: _selectedTemplate == -2 ? 2 : 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.upload_file,
+                                          color: _selectedTemplate == -2
+                                              ? yellow
+                                              : Colors.white38,
+                                          size: 18),
+                                      const SizedBox(width: 10),
+                                      Text(
+                                        _selectedTemplate == -2 &&
+                                                _uploadedTemplateName != null
+                                            ? _uploadedTemplateName!
+                                            : 'Upload your own .pptx (optional)',
+                                        style: GoogleFonts.archivoBlack(
+                                          color: _selectedTemplate == -2
+                                              ? yellow
+                                              : Colors.white38,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                      if (_selectedTemplate == -2) ...[
+                                        const Spacer(),
+                                        Icon(Icons.check_circle,
+                                            color: yellow, size: 16),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(height: 10),
+
+                              // PDF upload
+                              GestureDetector(
+                                onTap: () {
+                                  // TODO: file picker for .pdf
+                                  setState(
+                                      () => _uploadedPdfName = 'my_notes.pdf');
+                                },
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 12),
+                                  decoration: BoxDecoration(
+                                    color: _uploadedPdfName != null
+                                        ? yellow.withOpacity(0.1)
+                                        : Colors.white.withOpacity(0.04),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: _uploadedPdfName != null
+                                          ? yellow
+                                          : Colors.white12,
+                                      width:
+                                          _uploadedPdfName != null ? 2 : 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.picture_as_pdf,
+                                          color: _uploadedPdfName != null
+                                              ? yellow
+                                              : Colors.white38,
+                                          size: 18),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Text(
+                                          _uploadedPdfName ??
+                                              'Upload a PDF of your notes (optional)',
+                                          style: GoogleFonts.archivoBlack(
+                                            color: _uploadedPdfName != null
+                                                ? yellow
+                                                : Colors.white38,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ),
+                                      if (_uploadedPdfName != null) ...[
+                                        Icon(Icons.check_circle,
+                                            color: yellow, size: 16),
+                                        const SizedBox(width: 6),
+                                        GestureDetector(
+                                          onTap: () => setState(
+                                              () => _uploadedPdfName = null),
+                                          child: const Icon(Icons.close,
+                                              color: Colors.white38, size: 15),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(height: 14),
+
+                              // Generate button
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton.icon(
+                                  onPressed: _onGenerate,
+                                  icon: const Icon(Icons.auto_awesome,
+                                      size: 18),
+                                  label: Text('Generate Presentation',
+                                      style: GoogleFonts.archivoBlack(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.bold)),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: yellow,
+                                    foregroundColor: Colors.black,
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 16),
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(12)),
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(height: 16),
+
+                              // Meet the Creators bounce arrow
+                              Center(
+                                child: GestureDetector(
+                                  onTap: _scrollToBuiltBy,
+                                  child: AnimatedBuilder(
+                                    animation: _bounceAnimation,
+                                    builder: (context, child) =>
+                                        Transform.translate(
+                                      offset: Offset(0, _bounceAnimation.value),
+                                      child: child,
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Text(
+                                          'MEET THE CREATORS',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            color: yellow.withOpacity(0.75),
+                                            fontSize: 11,
+                                            letterSpacing: 2.5,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        const Icon(
+                                          Icons.keyboard_arrow_down_rounded,
+                                          color: yellow,
+                                          size: 34,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // ── Page 3: Built By ─────────────────────────────
                 SizedBox(
                   height: screenHeight,
                   width: double.infinity,
@@ -1374,11 +1809,11 @@ class _MainLayoutState extends State<MainLayout>
             Positioned.fill(
               child: _GeneratingPopup(
                 statusMessages: const [
-                  'Inferring search queries...',
-                  'Scraping live web data...',
-                  'Synthesizing narrative...',
-                  'Fact-checking claims...',
-                  'Generating visual assets...',
+                  '🔍 Inferring search queries...',
+                  '🌐 Scraping live web data...',
+                  '🧠 Synthesizing narrative...',
+                  '⚖️ Fact-checking claims...',
+                  '🎨 Generating visual assets...',
                 ],
                 onPlayGame: _onLaunchGame,
               ),
@@ -1396,6 +1831,15 @@ class _MainLayoutState extends State<MainLayout>
             ),
         ],
       ),
+    );
+  }
+
+  Widget _templatePlaceholder(bool selected) {
+    return Container(
+      width: 72,
+      color: selected ? yellow.withOpacity(0.2) : Colors.white10,
+      child: Icon(Icons.slideshow,
+          color: selected ? yellow : Colors.white24, size: 24),
     );
   }
 
@@ -1509,7 +1953,7 @@ class _GeneratingPopupState extends State<_GeneratingPopup> {
               const SizedBox(height: 6),
               Text(
                 _waiting
-                    ? "I'll let you know when it's ready."
+                    ? "We'll let you know when it's ready."
                     : 'This usually takes 15–45 seconds.',
                 style: const TextStyle(color: Colors.white38, fontSize: 12),
                 textAlign: TextAlign.center,
@@ -1565,7 +2009,7 @@ class _GeneratingPopupState extends State<_GeneratingPopup> {
                     onPressed: widget.onPlayGame,
                     icon: const Icon(Icons.sports_esports, size: 18),
                     label: Text(
-                      'Enjoy shooting the Asteroids till I cook!',
+                      'Enjoy the game till I cook! 🚀',
                       style: GoogleFonts.archivoBlack(fontSize: 14),
                     ),
                     style: ElevatedButton.styleFrom(

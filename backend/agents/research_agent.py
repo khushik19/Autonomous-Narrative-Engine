@@ -4,14 +4,30 @@ import os
 import requests
 import time
 import google.generativeai as genai
-from ddgs import DDGS
+from duckduckgo_search import DDGS
 
 #API
-GEMINI_API_KEY = "AIzaSyATpxUaFpC1y9ZflwFpPRiDEt3Xe2e2wYg"
-genai.configure(api_key=GEMINI_API_KEY)
+api_key = os.getenv("GEMINI_API_KEY")
+database_url = os.getenv("DATABASE_URL")
+genai.configure(api_key=api_key)
 
-# Using gemini-2.0-flash for higher quota limits
-model = genai.GenerativeModel('models/gemini-2.5-flash')
+# Using gemini-1.5-flash for higher quota limits
+model = genai.GenerativeModel('models/gemini-2.0-flash')
+
+def extract_text_from_pdf(pdf_path: str) -> str:
+    """Extracts text from a PDF file using pypdf."""
+    try:
+        from pypdf import PdfReader
+        reader = PdfReader(pdf_path)
+        extracted_text = ""
+        for page in reader.pages:
+            content = page.extract_text()
+            if content:
+                extracted_text += str(content) + "\n"
+        return extracted_text
+    except Exception as e:
+        print(f"!! [Research Agent] PDF extraction failed: {e}")
+        return ""
 
 # The Researcher Engine
 class ResearcherAgent:
@@ -128,7 +144,7 @@ class ResearcherAgent:
             print("!! Failed to parse JSON synthesis. Returning as list of slides text.")
             return [{"slide_number": 1, "title": "Research Summary", "subtitle": text}]
 
-def run(topic: str, output_path: str, deck_style: str = "detailed", num_slides: int = 7):
+def run(topic: str, output_path: str, deck_style: str = "detailed", num_slides: int = 7, pdf_path: str = None):
     print(f"\n[Research Agent] Starting research for topic: '{topic}'")
     researcher = ResearcherAgent(model)
     
@@ -138,6 +154,15 @@ def run(topic: str, output_path: str, deck_style: str = "detailed", num_slides: 
     # Step 2: Search and Scrape
     knowledge_base, sources = researcher.search_and_scrape(queries)
     
+    # Step 3: Extract text from PDF if available
+    pdf_text = ""
+    if pdf_path and os.path.exists(pdf_path):
+        print(f"[Research Agent] Extracting text from PDF: {pdf_path}")
+        pdf_text = extract_text_from_pdf(pdf_path)
+        if pdf_text:
+            knowledge_base = f"--- [UPLOADED PDF CONTENT] ---\n{pdf_text}\n\n--- [WEB SEARCH KNOWLEDGE] ---\n" + knowledge_base
+            sources.append("Uploaded PDF Document")
+
     if not knowledge_base:
         print("!! No knowledge base found. Using default topic info.")
         knowledge_base = f"Research data for {topic} was unavailable at scraping time."

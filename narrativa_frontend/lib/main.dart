@@ -8,22 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// ─────────────────────────────────────────────
-// HOW TO INTEGRATE THE WEBSOCKET:
-//
-// No extra packages needed — uses dart:io WebSocket built in.
-//
-// Your backend should send JSON messages like:
-//      {"type": "status", "index": 0}   ← drives the status tracker
-//      {"type": "status", "index": 1}
-//      ...
-//      {"type": "done", "sources": ["https://...", "https://..."]}
-//
-// Change _wsUrl below to your real backend WebSocket URL.
-// ─────────────────────────────────────────────
-
-
-
 void main() {
   runApp(const NarrativaApp());
 }
@@ -83,7 +67,7 @@ class SourcesScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          '🔗 Sources Used',
+          'Sources Used',
           style: GoogleFonts.archivoBlack(color: yellow, fontSize: 18),
         ),
       ),
@@ -845,7 +829,7 @@ class _AsteroidGameState extends State<AsteroidGame> {
                                 Row(
                                   children: [
                                     Text(
-                                      '🔗 Sources Used',
+                                      'Sources Used',
                                       style: GoogleFonts.archivoBlack(
                                         color: Colors.white,
                                         fontSize: 13,
@@ -1252,7 +1236,7 @@ class _MainLayoutState extends State<MainLayout>
       _showGame = false;
       _isGenerating = false;
     });
-    _gameKey = GlobalKey(); // Reset the key so a new game can start next time
+    _gameKey = GlobalKey(); // reset the key so a new game can start next time
   }
 
   @override
@@ -1319,7 +1303,7 @@ class _MainLayoutState extends State<MainLayout>
                                               },
                                               decoration: const InputDecoration(
                                                 hintText:
-                                                    'Enter a story topic...',
+                                                    'Enter your presentation topic...',
                                                 hintStyle: TextStyle(
                                                   color: Colors.black45,
                                                 ),
@@ -1734,7 +1718,7 @@ class _MainLayoutState extends State<MainLayout>
                                           crossAxisCount: 2,
                                           crossAxisSpacing: 14,
                                           mainAxisSpacing: 14,
-                                          childAspectRatio: 2.6,
+                                          childAspectRatio: 3.8, // CHANGED: was 2.6, now tighter cards
                                         ),
                                     itemBuilder: (context, i) {
                                       final t = _templates[i];
@@ -1778,20 +1762,23 @@ class _MainLayoutState extends State<MainLayout>
                                                       bottomLeft:
                                                           Radius.circular(10),
                                                     ),
-                                                child: thumbUrl != null
-                                                    ? Image.network(
-                                                        thumbUrl,
-                                                        width: 72,
-                                                        fit: BoxFit.cover,
-                                                        errorBuilder:
-                                                            (_, __, ___) =>
-                                                                _templatePlaceholder(
-                                                                  selected,
-                                                                ),
-                                                      )
-                                                    : _templatePlaceholder(
-                                                        selected,
-                                                      ),
+                                                child: SizedBox( // CHANGED: was bare Image.network/placeholder, now wrapped in SizedBox to fill card height
+                                                  width: 90,
+                                                  height: double.infinity,
+                                                  child: thumbUrl != null
+                                                      ? Image.network(
+                                                          thumbUrl,
+                                                          fit: BoxFit.cover,
+                                                          errorBuilder:
+                                                              (_, __, ___) =>
+                                                                  _templatePlaceholder(
+                                                                    selected,
+                                                                  ),
+                                                        )
+                                                      : _templatePlaceholder(
+                                                          selected,
+                                                        ),
+                                                ),
                                               ),
                                               const SizedBox(width: 12),
                                               Expanded(
@@ -2151,7 +2138,7 @@ class _MainLayoutState extends State<MainLayout>
           if (_isGenerating || _showGame)
             Positioned.fill(
               child: Offstage(
-                offstage: !_showGame, // Keeps the backend connection alive while hidden
+                offstage: !_showGame, // keeps the backend connection alive while hidden
                 child: AsteroidGame(
                   key: _gameKey,
                   onGameEnd: _onGameEnd,
@@ -2172,11 +2159,11 @@ class _MainLayoutState extends State<MainLayout>
               child: _GeneratingPopup(
                 statusIndex: _backendStatusIndex,
                 statusMessages: const [
-                  '🔍 Inferring search queries...',
-                  '🌐 Scraping live web data...',
-                  '🧠 Synthesizing narrative...',
-                  '⚖️ Fact-checking claims...',
-                  '🎨 Generating visual assets...',
+                  'Inferring search queries...',
+                  'Scraping live web data...',
+                  'Synthesizing narrative...',
+                  'Fact-checking claims...',
+                  'Generating visual assets...',
                 ],
                 onPlayGame: _onLaunchGame,
               ),
@@ -2188,7 +2175,7 @@ class _MainLayoutState extends State<MainLayout>
 
   Widget _templatePlaceholder(bool selected) {
     return Container(
-      width: 72,
+      width: 90, // CHANGED: was 72, matches new SizedBox width
       color: selected ? yellow.withOpacity(0.2) : Colors.white10,
       child: Icon(
         Icons.slideshow,
@@ -2293,7 +2280,7 @@ class _GeneratingPopupState extends State<_GeneratingPopup> {
               const SizedBox(height: 6),
               Text(
                 _waiting
-                    ? "We'll let you know when it's ready."
+                    ? "I'll let you know when it's ready."
                     : 'This usually takes 15–45 seconds.',
                 style: const TextStyle(color: Colors.white38, fontSize: 12),
                 textAlign: TextAlign.center,
@@ -2358,7 +2345,7 @@ class _GeneratingPopupState extends State<_GeneratingPopup> {
                     onPressed: widget.onPlayGame,
                     icon: const Icon(Icons.sports_esports, size: 18),
                     label: Text(
-                      'Enjoy the game till I cook! 🚀',
+                      'Enjoy shooting the asteroids till I cook!',
                       style: GoogleFonts.archivoBlack(fontSize: 14),
                     ),
                     style: ElevatedButton.styleFrom(

@@ -6,3 +6,11 @@ pillow
 python-multipart
 aiofiles
 requests
+# For copywriter_agent (PEFT + transformers must be compatible)
+torch
+transformers>=4.45.0
+peft
+accelerate
+google-generativeai
+duckduckgo-search
+ddgs

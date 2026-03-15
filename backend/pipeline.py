@@ -16,7 +16,7 @@ def get_temp_path(request_id: str, filename: str) -> str:
 
 def run_pipeline(
     topic: str,
-    template_id: str = "modern_blue",
+    template_id: str = "Bold Text and Color Morph Product Launch Presentation",
     custom_template_path: str = None
 ) -> str:
     """
@@ -47,12 +47,11 @@ def run_pipeline(
     # Path where research agent will save its output
     research_output_path = get_temp_path(request_id, "research.txt")
     
-    # Import and run your teammate's research agent
-    from agents.research_agent import run as run_research
+    # Import and run research agent
+    import agents.research_agent as research_agent
     
     # Call their function
-    # Adjust this based on how their function works
-    run_research(
+    research_agent.run(
         topic       = topic,
         output_path = research_output_path
     )
@@ -75,12 +74,11 @@ def run_pipeline(
     # Path where copywriter agent will save its output
     content_output_path = get_temp_path(request_id, "content.json")
     
-    # Import and run your teammate's copywriter agent
-    from agents.copywriter_agent import run as run_copywriter
+    # Import and run copywriter agent
+    import agents.copywriter_agent as copywriter_agent
     
     # Call their function
-    # Adjust this based on how their function works
-    run_copywriter(
+    copywriter_agent.run(
         input_path  = research_output_path,
         output_path = content_output_path
     )
@@ -108,9 +106,9 @@ def run_pipeline(
     pptx_output_path = get_temp_path(request_id, "presentation.pptx")
     
     # Import and run visual agent
-    from agents.visual_agent import run as run_visual
+    import agents.visual_agent as visual_agent
     
-    run_visual(
+    visual_agent.run(
         content_json         = content_json,
         output_path          = pptx_output_path,
         template_id          = template_id,

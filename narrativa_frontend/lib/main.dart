@@ -1718,7 +1718,7 @@ class _MainLayoutState extends State<MainLayout>
                                           crossAxisCount: 2,
                                           crossAxisSpacing: 14,
                                           mainAxisSpacing: 14,
-                                          childAspectRatio: 3.8, // CHANGED: was 2.6, now tighter cards
+                                          childAspectRatio: 5.5, // CHANGED: was 3.8, cards were too tall on wider screens
                                         ),
                                     itemBuilder: (context, i) {
                                       final t = _templates[i];
@@ -1763,7 +1763,7 @@ class _MainLayoutState extends State<MainLayout>
                                                           Radius.circular(10),
                                                     ),
                                                 child: SizedBox( // CHANGED: was bare Image.network/placeholder, now wrapped in SizedBox to fill card height
-                                                  width: 90,
+                                                  width: 70,
                                                   height: double.infinity,
                                                   child: thumbUrl != null
                                                       ? Image.network(
@@ -2175,7 +2175,7 @@ class _MainLayoutState extends State<MainLayout>
 
   Widget _templatePlaceholder(bool selected) {
     return Container(
-      width: 90, // CHANGED: was 72, matches new SizedBox width
+      width: 70, // CHANGED: matches new SizedBox width
       color: selected ? yellow.withOpacity(0.2) : Colors.white10,
       child: Icon(
         Icons.slideshow,

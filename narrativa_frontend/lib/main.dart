@@ -1718,7 +1718,7 @@ class _MainLayoutState extends State<MainLayout>
                                           crossAxisCount: 2,
                                           crossAxisSpacing: 14,
                                           mainAxisSpacing: 14,
-                                          childAspectRatio: 2.6,
+                                          childAspectRatio: 3.8, // CHANGED: was 2.6, now tighter cards
                                         ),
                                     itemBuilder: (context, i) {
                                       final t = _templates[i];
@@ -1762,20 +1762,23 @@ class _MainLayoutState extends State<MainLayout>
                                                       bottomLeft:
                                                           Radius.circular(10),
                                                     ),
-                                                child: thumbUrl != null
-                                                    ? Image.network(
-                                                        thumbUrl,
-                                                        width: 72,
-                                                        fit: BoxFit.cover,
-                                                        errorBuilder:
-                                                            (_, __, ___) =>
-                                                                _templatePlaceholder(
-                                                                  selected,
-                                                                ),
-                                                      )
-                                                    : _templatePlaceholder(
-                                                        selected,
-                                                      ),
+                                                child: SizedBox( // CHANGED: was bare Image.network/placeholder, now wrapped in SizedBox to fill card height
+                                                  width: 90,
+                                                  height: double.infinity,
+                                                  child: thumbUrl != null
+                                                      ? Image.network(
+                                                          thumbUrl,
+                                                          fit: BoxFit.cover,
+                                                          errorBuilder:
+                                                              (_, __, ___) =>
+                                                                  _templatePlaceholder(
+                                                                    selected,
+                                                                  ),
+                                                        )
+                                                      : _templatePlaceholder(
+                                                          selected,
+                                                        ),
+                                                ),
                                               ),
                                               const SizedBox(width: 12),
                                               Expanded(
@@ -2172,7 +2175,7 @@ class _MainLayoutState extends State<MainLayout>
 
   Widget _templatePlaceholder(bool selected) {
     return Container(
-      width: 72,
+      width: 90, // CHANGED: was 72, matches new SizedBox width
       color: selected ? yellow.withOpacity(0.2) : Colors.white10,
       child: Icon(
         Icons.slideshow,

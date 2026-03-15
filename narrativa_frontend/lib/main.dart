@@ -746,7 +746,7 @@ class _AsteroidGameState extends State<AsteroidGame> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          '✓ Your Presentation is Ready!',
+                          'Your Presentation is Ready!',
                           style: GoogleFonts.archivoBlack(
                             color: yellow,
                             fontSize: 34,

@@ -7,12 +7,11 @@ import google.generativeai as genai
 from duckduckgo_search import DDGS
 
 #API
-api_key = os.getenv("GEMINI_API_KEY")
-database_url = os.getenv("DATABASE_URL")
-genai.configure(api_key=api_key)
+GEMINI_API_KEY = "AIzaSyD6zJVYoDKJSzG08WcguNdGPL0UZK59jW8"
+genai.configure(api_key=GEMINI_API_KEY)
 
 # Using gemini-1.5-flash for higher quota limits
-model = genai.GenerativeModel('models/gemini-2.0-flash')
+model = genai.GenerativeModel('models/gemini-3-flash-preview')
 
 def extract_text_from_pdf(pdf_path: str) -> str:
     """Extracts text from a PDF file using pypdf."""

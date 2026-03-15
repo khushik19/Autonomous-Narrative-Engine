@@ -287,33 +287,3 @@ Slide 3: Challenges. EVs still $8000 pricier than ICE. Only 40% of batteries rec
         print(f"Generated {len(slides)} slides:\n")
         for s in slides:
             print(json.dumps(s, indent=2))
-
-
-
-# agents/copywriter_agent.py
-# Your teammate's existing code stays the same
-# Just make sure there is a function called "run" like this:
-
-# def run(input_path: str, output_path: str):
-#     """
-#     input_path:  path to research.txt file
-#     output_path: where to save content.json
-#     """
-    
-#     # Read the research text
-#     with open(input_path, "r", encoding="utf-8") as f:
-#         research_text = f.read()
-    
-#     # ── Your teammate's existing processing code here ──
-#     # They sort main points and structure for PPT
-    
-#     # At the end save content.json like this:
-#     content = {
-#         "presentation_title": "...",
-#         "theme": "corporate",
-#         "slides": [ ... ]
-#     }
-    
-#     with open(output_path, "w", encoding="utf-8") as f:
-#         import json
-#         json.dump(content, f, indent=2)

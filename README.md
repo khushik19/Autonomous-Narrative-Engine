@@ -79,3 +79,9 @@ cd frontend
 flutter pub get
 flutter run
 ```
+### Future Scope
+
+Future improvements include:
+1. **Interactive Editing:** Storing intermediate content.json securely to allow users to edit text blocks in the frontend before the Visual Designer Agent executes the final PowerPoint render.
+2. **Advanced Visual Semantics:** Further integration into chart rendering using seaborn/matplotlib and dynamic icon fetching natively to the .pptx shapes.
+3. **Personal templates:** Feature that lets a user import or upload an editable template from sites like canva, powerpoint etc 

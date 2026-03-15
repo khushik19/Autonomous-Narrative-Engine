@@ -22,10 +22,10 @@ def run_pipeline(
     num_slides: int = 8,
     pdf_path: str = None,
     status_callback: callable = None
-) -> str:
+) -> tuple[str, list]:
     """
     Runs all 3 agents in order
-    Returns path to final .pptx file
+    Returns (path to final .pptx file, list of sources used)
     
     topic:                what user typed
     template_id:          which built-in template to use
@@ -63,13 +63,14 @@ def run_pipeline(
     import agents.research_agent as research_agent
     
     # Call their function
-    research_agent.run(
+    research_data = research_agent.run(
         topic       = topic,
         output_path = research_output_path,
         deck_style  = deck_style,
         num_slides  = num_slides,
         pdf_path    = pdf_path
     )
+    sources = research_data.get("sources_used", [])
     
     # Make sure file was created
     if not os.path.exists(research_output_path):
@@ -141,7 +142,7 @@ def run_pipeline(
     if status_callback:
         status_callback(4, "Finalizing presentation and exporting...")
     print(f"\nPresentation ready: {pptx_output_path}")
-    return pptx_output_path
+    return pptx_output_path, sources
 
 
 def cleanup(request_id: str):

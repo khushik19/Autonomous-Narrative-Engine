@@ -1785,11 +1785,11 @@ class _MainLayoutState extends State<MainLayout>
             Positioned.fill(
               child: _GeneratingPopup(
                 statusMessages: const [
-                  '🔍 Inferring search queries...',
-                  '🌐 Scraping live web data...',
-                  '🧠 Synthesizing narrative...',
-                  '⚖️ Fact-checking claims...',
-                  '🎨 Generating visual assets...',
+                  'Inferring search queries...',
+                  'Scraping live web data...',
+                  'Synthesizing narrative...',
+                  'Fact-checking claims...',
+                  'Generating visual assets...',
                 ],
                 onPlayGame: _onLaunchGame,
               ),
@@ -1983,7 +1983,7 @@ class _GeneratingPopupState extends State<_GeneratingPopup> {
                     onPressed: widget.onPlayGame,
                     icon: const Icon(Icons.sports_esports, size: 18),
                     label: Text(
-                      'Enjoy the game till I cook! 🚀',
+                      'Enjoy shooting the asteroids till I cook!',
                       style: GoogleFonts.archivoBlack(fontSize: 14),
                     ),
                     style: ElevatedButton.styleFrom(

@@ -21,3 +21,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/images/khushi.jpg
+    - assets/images/achal.jpg
+    - assets/images/deepanshi.jpg
+    - assets/images/vanshvi.jpg

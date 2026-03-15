@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:html' as html;
 import 'dart:math';
+import 'dart:typed_data';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -20,7 +22,7 @@ import 'package:google_fonts/google_fonts.dart';
 // Change _wsUrl below to your real backend WebSocket URL.
 // ─────────────────────────────────────────────
 
-const String _wsUrl = 'ws://your-backend-url/ws/generate';
+
 
 void main() {
   runApp(const NarrativaApp());
@@ -34,7 +36,9 @@ class NarrativaApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
-        textTheme: GoogleFonts.archivoBlackTextTheme(ThemeData.dark().textTheme),
+        textTheme: GoogleFonts.archivoBlackTextTheme(
+          ThemeData.dark().textTheme,
+        ),
       ),
       home: const MainLayout(),
     );
@@ -57,7 +61,7 @@ class Particle {
   double x, y, vx, vy, life, maxLife, size;
   Color color;
   Particle(this.x, this.y, this.vx, this.vy, this.life, this.size, this.color)
-      : maxLife = life;
+    : maxLife = life;
 }
 
 // sources screen
@@ -94,7 +98,7 @@ class SourcesScreen extends StatelessWidget {
             leading: const Icon(Icons.link, color: Color(0xFF64B5F6), size: 20),
             title: GestureDetector(
               onTap: () {
-                // TODO: launch url (add url_launcher package)
+                html.window.open(url, '_blank');
               },
               child: Text(
                 url,
@@ -117,12 +121,16 @@ class SourcesScreen extends StatelessWidget {
 
 class AsteroidGame extends StatefulWidget {
   final VoidCallback onGameEnd;
+  final ValueChanged<int>? onStatusUpdate;
+  final VoidCallback? onGenerationComplete;
   final List<String> sources;
   final Map<String, dynamic> payload;
 
   const AsteroidGame({
     super.key,
     required this.onGameEnd,
+    this.onStatusUpdate,
+    this.onGenerationComplete,
     required this.sources,
     required this.payload,
   });
@@ -161,6 +169,10 @@ class _AsteroidGameState extends State<AsteroidGame> {
   late Timer _asteroidSpawner;
   html.WebSocket? _socket;
   StreamSubscription? _wsSub;
+  String? _pdfBase64;
+  String? _pptxBase64;
+  bool _hasError = false;
+  String? _errorMessage;
 
   final Random _rng = Random();
   bool _leftDown = false;
@@ -189,35 +201,76 @@ class _AsteroidGameState extends State<AsteroidGame> {
 
   void _connectWebSocket() {
     try {
-      _socket = html.WebSocket(_wsUrl);
+      final String? hostname = html.window.location.hostname;
+      final String host = (hostname == null || hostname == 'localhost' || hostname.isEmpty) 
+          ? '127.0.0.1' 
+          : hostname;
+      final String fullWsUrl = 'ws://$host:8000/ws/generate';
+      
+      print("--- [WebSocket] Connecting to $fullWsUrl ---");
+      _socket = html.WebSocket(fullWsUrl);
 
       _socket!.onOpen.listen((_) {
-        _socket!.send(jsonEncode(widget.payload));
+        print("--- [WebSocket] Connected! ---");
+        final p = widget.payload;
+        print("--- [WebSocket] Sending Payload: ${jsonEncode(p)} ---");
+        _socket!.send(jsonEncode(p));
       });
 
-      _wsSub = _socket!.onMessage.listen(
-        (html.MessageEvent event) {
-          if (!mounted) return;
-          final data =
-              jsonDecode(event.data as String) as Map<String, dynamic>;
+      _wsSub = _socket!.onMessage.listen((html.MessageEvent event) {
+        if (!mounted) return;
+        print("--- [WebSocket] Received: ${event.data} ---");
+        final data = jsonDecode(event.data as String) as Map<String, dynamic>;
 
-          if (data['type'] == 'status') {
-            setState(() => _statusIndex =
-                (data['index'] as int).clamp(0, _statusMessages.length - 1));
-          } else if (data['type'] == 'done') {
+        if (data['type'] == 'status') {
+          final newIndex = (data['index'] as int).clamp(
+            0,
+            _statusMessages.length - 1,
+          );
+          setState(() => _statusIndex = newIndex);
+          if (widget.onStatusUpdate != null) {
+            widget.onStatusUpdate!(newIndex);
+          }
+        } else if (data['type'] == 'done') {
+          print("--- [WebSocket] Received DONE message ---");
+          setState(() {
+            _pdfBase64 = data['pdf_base64'] as String?;
+            _pptxBase64 = data['pptx_base64'] as String?;
             final rawSources = data['sources'];
             if (rawSources is List) {
-              setState(() =>
-                  _liveSources = rawSources.map((e) => e.toString()).toList());
+              _liveSources = rawSources.map((e) => e.toString()).toList();
             }
-            generationComplete();
+          });
+          generationComplete();
+          if (widget.onGenerationComplete != null) {
+            widget.onGenerationComplete!();
           }
-        },
-      );
+        } else if (data['type'] == 'error') {
+          print("--- [WebSocket] Received ERROR message: ${data['message']} ---");
+          setState(() {
+            _hasError = true;
+            _errorMessage = data['message'] as String?;
+          });
+        }
+      });
 
-      _socket!.onError.listen((e) => debugPrint('WebSocket error: $e'));
-      _socket!.onClose.listen((_) => debugPrint('WebSocket closed'));
+      _socket!.onError.listen((e) {
+        print("--- [WebSocket] Error: $e ---");
+        debugPrint('WebSocket error: $e');
+      });
+      
+      _socket!.onClose.listen((e) {
+        print("--- [WebSocket] Closed. Code: ${e.code}, Reason: ${e.reason} ---");
+        debugPrint('WebSocket closed');
+        if (!generationDone && !_hasError) {
+          print("--- [WebSocket] Retrying in 2s... ---");
+          Future.delayed(const Duration(seconds: 2), () {
+            if (mounted && !generationDone && !_hasError) _connectWebSocket();
+          });
+        }
+      });
     } catch (e) {
+      print("--- [WebSocket] Connection Exception: $e ---");
       debugPrint('WebSocket connection failed: $e');
     }
   }
@@ -237,14 +290,17 @@ class _AsteroidGameState extends State<AsteroidGame> {
     for (int i = 0; i < count; i++) {
       final angle = _rng.nextDouble() * 2 * pi;
       final speed = 0.004 + _rng.nextDouble() * 0.008;
-      particles.add(Particle(
-        x, y,
-        cos(angle) * speed,
-        sin(angle) * speed,
-        0.6 + _rng.nextDouble() * 0.4,
-        (sizePx * 0.15 + _rng.nextDouble() * sizePx * 0.2).clamp(3, 10),
-        _burstColors[_rng.nextInt(_burstColors.length)],
-      ));
+      particles.add(
+        Particle(
+          x,
+          y,
+          cos(angle) * speed,
+          sin(angle) * speed,
+          0.6 + _rng.nextDouble() * 0.4,
+          (sizePx * 0.15 + _rng.nextDouble() * sizePx * 0.2).clamp(3, 10),
+          _burstColors[_rng.nextInt(_burstColors.length)],
+        ),
+      );
     }
   }
 
@@ -350,6 +406,9 @@ class _AsteroidGameState extends State<AsteroidGame> {
     });
     _gameLoop.cancel();
     _asteroidSpawner.cancel();
+    if (widget.onGenerationComplete != null) {
+      widget.onGenerationComplete!();
+    }
   }
 
   @override
@@ -376,155 +435,174 @@ class _AsteroidGameState extends State<AsteroidGame> {
         child: Stack(
           children: [
             // game
-            LayoutBuilder(builder: (context, constraints) {
-              final w = constraints.maxWidth;
-              final h = constraints.maxHeight;
-              return Stack(
-                children: [
-                  CustomPaint(size: Size(w, h), painter: _StarsPainter()),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final w = constraints.maxWidth;
+                final h = constraints.maxHeight;
+                return Stack(
+                  children: [
+                    CustomPaint(size: Size(w, h), painter: _StarsPainter()),
 
-                  for (final a in asteroids)
-                    Positioned(
-                      left: a.x * w - a.size * w / 2,
-                      top: a.y * h - a.size * h / 2,
-                      child: _AsteroidWidget(size: a.size * w),
-                    ),
+                    for (final a in asteroids)
+                      Positioned(
+                        left: a.x * w - a.size * w / 2,
+                        top: a.y * h - a.size * h / 2,
+                        child: _AsteroidWidget(size: a.size * w),
+                      ),
 
-                  for (final p in particles)
-                    Positioned(
-                      left: p.x * w - p.size / 2,
-                      top: p.y * h - p.size / 2,
-                      child: Opacity(
-                        opacity: (p.life / p.maxLife).clamp(0.0, 1.0),
+                    for (final p in particles)
+                      Positioned(
+                        left: p.x * w - p.size / 2,
+                        top: p.y * h - p.size / 2,
+                        child: Opacity(
+                          opacity: (p.life / p.maxLife).clamp(0.0, 1.0),
+                          child: Container(
+                            width: p.size,
+                            height: p.size,
+                            decoration: BoxDecoration(
+                              color: p.color,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: p.color.withOpacity(0.6),
+                                  blurRadius: 4,
+                                  spreadRadius: 1,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+
+                    for (final b in bullets)
+                      Positioned(
+                        left: b.x * w - 3,
+                        top: b.y * h,
                         child: Container(
-                          width: p.size,
-                          height: p.size,
+                          width: 6,
+                          height: 18,
                           decoration: BoxDecoration(
-                            color: p.color,
-                            shape: BoxShape.circle,
+                            color: yellow,
+                            borderRadius: BorderRadius.circular(3),
                             boxShadow: [
                               BoxShadow(
-                                color: p.color.withOpacity(0.6),
-                                blurRadius: 4,
-                                spreadRadius: 1,
+                                color: yellow.withOpacity(0.8),
+                                blurRadius: 8,
+                                spreadRadius: 2,
                               ),
                             ],
                           ),
                         ),
                       ),
-                    ),
 
-                  for (final b in bullets)
                     Positioned(
-                      left: b.x * w - 3,
-                      top: b.y * h,
-                      child: Container(
-                        width: 6,
-                        height: 18,
-                        decoration: BoxDecoration(
-                          color: yellow,
-                          borderRadius: BorderRadius.circular(3),
-                          boxShadow: [
-                            BoxShadow(
-                              color: yellow.withOpacity(0.8),
-                              blurRadius: 8,
-                              spreadRadius: 2,
-                            ),
-                          ],
-                        ),
-                      ),
+                      left: shipX * w - 24,
+                      top: shipY * h - 24,
+                      child: const _ShipWidget(color: yellow),
                     ),
 
-                  Positioned(
-                    left: shipX * w - 24,
-                    top: shipY * h - 24,
-                    child: const _ShipWidget(color: yellow),
-                  ),
-
-                  Positioned(
-                    top: 20,
-                    left: 20,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('SCORE: $score',
-                            style: GoogleFonts.archivoBlack(
-                                color: yellow, fontSize: 18)),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: List.generate(
-                            3,
-                            (i) => Icon(Icons.favorite,
-                                color:
-                                    i < lives ? Colors.red : Colors.grey[800],
-                                size: 20),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // status tracker
-                  Positioned(
-                    top: 20,
-                    right: 20,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.07),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.white12),
-                      ),
+                    Positioned(
+                      top: 20,
+                      left: 20,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: List.generate(_statusMessages.length, (i) {
-                          final isDone = i < _statusIndex;
-                          final isActive = i == _statusIndex;
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 3),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (isDone)
-                                  const Icon(Icons.check_circle,
-                                      color: Colors.greenAccent, size: 13)
-                                else if (isActive)
-                                  const SizedBox(
-                                    width: 13,
-                                    height: 13,
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 1.5, color: yellow),
-                                  )
-                                else
-                                  const Icon(Icons.circle_outlined,
-                                      color: Colors.white24, size: 13),
-                                const SizedBox(width: 7),
-                                Text(
-                                  _statusMessages[i],
-                                  style: GoogleFonts.archivoBlack(
-                                    color: isDone
-                                        ? Colors.greenAccent
-                                        : isActive
-                                            ? Colors.white
-                                            : Colors.white30,
-                                    fontSize: 12,
-                                    fontWeight: isActive
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                  ),
-                                ),
-                              ],
+                        children: [
+                          Text(
+                            'SCORE: $score',
+                            style: GoogleFonts.archivoBlack(
+                              color: yellow,
+                              fontSize: 18,
                             ),
-                          );
-                        }),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: List.generate(
+                              3,
+                              (i) => Icon(
+                                Icons.favorite,
+                                color: i < lives
+                                    ? Colors.red
+                                    : Colors.grey[800],
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                ],
-              );
-            }),
+
+                    // status tracker
+                    Positioned(
+                      top: 20,
+                      right: 20,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.07),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.white12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: List.generate(_statusMessages.length, (i) {
+                            final isDone = i < _statusIndex;
+                            final isActive = i == _statusIndex;
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 3),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (isDone)
+                                    const Icon(
+                                      Icons.check_circle,
+                                      color: Colors.greenAccent,
+                                      size: 13,
+                                    )
+                                  else if (isActive)
+                                    const SizedBox(
+                                      width: 13,
+                                      height: 13,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 1.5,
+                                        color: yellow,
+                                      ),
+                                    )
+                                  else
+                                    const Icon(
+                                      Icons.circle_outlined,
+                                      color: Colors.white24,
+                                      size: 13,
+                                    ),
+                                  const SizedBox(width: 7),
+                                  Text(
+                                    _statusMessages[i],
+                                    style: GoogleFonts.archivoBlack(
+                                      color: isDone
+                                          ? Colors.greenAccent
+                                          : isActive
+                                          ? Colors.white
+                                          : Colors.white30,
+                                      fontSize: 12,
+                                      fontWeight: isActive
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
 
             // game buttons
             Positioned(
@@ -557,33 +635,102 @@ class _AsteroidGameState extends State<AsteroidGame> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text('GAME OVER',
-                          style: GoogleFonts.archivoBlack(
-                              color: Colors.red, fontSize: 48)),
+                      Text(
+                        'GAME OVER',
+                        style: GoogleFonts.archivoBlack(
+                          color: Colors.red,
+                          fontSize: 48,
+                        ),
+                      ),
                       const SizedBox(height: 8),
-                      Text('Score: $score',
-                          style: GoogleFonts.archivoBlack(
-                              color: yellow, fontSize: 24)),
+                      Text(
+                        'Score: $score',
+                        style: GoogleFonts.archivoBlack(
+                          color: yellow,
+                          fontSize: 24,
+                        ),
+                      ),
                       const SizedBox(height: 24),
-                      Text('Still generating your presentation...',
-                          style: GoogleFonts.archivoBlack(
-                              color: Colors.white54, fontSize: 14)),
+                      Text(
+                        'Still generating your presentation...',
+                        style: GoogleFonts.archivoBlack(
+                          color: Colors.white54,
+                          fontSize: 14,
+                        ),
+                      ),
                       const SizedBox(height: 24),
                       ElevatedButton.icon(
                         onPressed: _replay,
                         icon: const Icon(Icons.replay, size: 18),
-                        label: Text('Play Again',
-                            style: GoogleFonts.archivoBlack(fontSize: 14)),
+                        label: Text(
+                          'Play Again',
+                          style: GoogleFonts.archivoBlack(fontSize: 14),
+                        ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: yellow,
                           foregroundColor: Colors.black,
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 28, vertical: 14),
+                            horizontal: 28,
+                            vertical: 14,
+                          ),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
                     ],
+                  ),
+                ),
+              ),
+
+            // error
+            if (_hasError)
+              Container(
+                color: const Color(0xEE000000),
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 40),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.error_outline, color: Colors.red, size: 64),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Oops! Something went wrong',
+                          style: GoogleFonts.archivoBlack(
+                            color: Colors.red,
+                            fontSize: 24,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          _errorMessage ?? 'Unknown error occurred.',
+                          style: const TextStyle(color: Colors.white70, fontSize: 14),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 32),
+                        ElevatedButton.icon(
+                          onPressed: widget.onGameEnd,
+                          icon: const Icon(Icons.close, size: 18),
+                          label: Text(
+                            'Close',
+                            style: GoogleFonts.archivoBlack(fontSize: 14),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: yellow,
+                            foregroundColor: Colors.black,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 28,
+                              vertical: 14,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -601,13 +748,19 @@ class _AsteroidGameState extends State<AsteroidGame> {
                         Text(
                           '✓ Your Presentation is Ready!',
                           style: GoogleFonts.archivoBlack(
-                              color: yellow, fontSize: 34),
+                            color: yellow,
+                            fontSize: 34,
+                          ),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 8),
-                        Text('Final score: $score',
-                            style: GoogleFonts.archivoBlack(
-                                color: Colors.white, fontSize: 18)),
+                        Text(
+                          'Final score: $score',
+                          style: GoogleFonts.archivoBlack(
+                            color: Colors.white,
+                            fontSize: 18,
+                          ),
+                        ),
                         const SizedBox(height: 28),
 
                         // download buttons
@@ -616,43 +769,63 @@ class _AsteroidGameState extends State<AsteroidGame> {
                           children: [
                             ElevatedButton.icon(
                               onPressed: () {
-                                // TODO: trigger PDF download
+                                if (_pdfBase64 == null) return;
+                                html.AnchorElement(
+                                  href: 'data:application/pdf;base64,$_pdfBase64',
+                                )
+                                  ..setAttribute('download', 'presentation.pdf')
+                                  ..click();
                               },
                               icon: const Icon(Icons.picture_as_pdf, size: 18),
-                              label: Text('Download PDF',
-                                  style: GoogleFonts.archivoBlack(
-                                      fontSize: 14)),
+                              label: Text(
+                                'Download PDF',
+                                style: GoogleFonts.archivoBlack(fontSize: 14),
+                              ),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: yellow,
                                 foregroundColor: Colors.black,
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 24, vertical: 14),
+                                  horizontal: 24,
+                                  vertical: 14,
+                                ),
                                 shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12)),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                               ),
                             ),
                             const SizedBox(width: 16),
                             ElevatedButton.icon(
                               onPressed: () {
-                                // TODO: trigger PPTX download
+                                if (_pptxBase64 == null) return;
+                                final mime =
+                                    'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+                                html.AnchorElement(
+                                  href: 'data:$mime;base64,$_pptxBase64',
+                                )
+                                  ..setAttribute('download', 'presentation.pptx')
+                                  ..click();
                               },
                               icon: const Icon(Icons.slideshow, size: 18),
-                              label: Text('Download PPTX',
-                                  style: GoogleFonts.archivoBlack(
-                                      fontSize: 14)),
+                              label: Text(
+                                'Download PPTX',
+                                style: GoogleFonts.archivoBlack(fontSize: 14),
+                              ),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.white,
                                 foregroundColor: Colors.black,
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 24, vertical: 14),
+                                  horizontal: 24,
+                                  vertical: 14,
+                                ),
                                 shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12)),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                               ),
                             ),
                           ],
                         ),
 
-                        // sources 
+                        // sources
                         if (_liveSources.isNotEmpty) ...[
                           const SizedBox(height: 24),
                           Container(
@@ -662,17 +835,22 @@ class _AsteroidGameState extends State<AsteroidGame> {
                               color: Colors.white.withOpacity(0.07),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                  color: Colors.white12, width: 1),
+                                color: Colors.white12,
+                                width: 1,
+                              ),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
                                   children: [
-                                    Text('🔗 Sources Used',
-                                        style: GoogleFonts.archivoBlack(
-                                            color: Colors.white,
-                                            fontSize: 13)),
+                                    Text(
+                                      '🔗 Sources Used',
+                                      style: GoogleFonts.archivoBlack(
+                                        color: Colors.white,
+                                        fontSize: 13,
+                                      ),
+                                    ),
                                     const Spacer(),
                                     if (_liveSources.length > 3)
                                       GestureDetector(
@@ -680,7 +858,8 @@ class _AsteroidGameState extends State<AsteroidGame> {
                                           context,
                                           MaterialPageRoute(
                                             builder: (_) => SourcesScreen(
-                                                sources: _liveSources),
+                                              sources: _liveSources,
+                                            ),
                                           ),
                                         ),
                                         child: Text(
@@ -688,7 +867,8 @@ class _AsteroidGameState extends State<AsteroidGame> {
                                           style: GoogleFonts.archivoBlack(
                                             color: Color(0xFF64B5F6),
                                             fontSize: 12,
-                                            decoration: TextDecoration.underline,
+                                            decoration:
+                                                TextDecoration.underline,
                                             decorationColor: Color(0xFF64B5F6),
                                           ),
                                         ),
@@ -696,26 +876,34 @@ class _AsteroidGameState extends State<AsteroidGame> {
                                   ],
                                 ),
                                 const SizedBox(height: 8),
-                                ..._liveSources.take(3).map((url) => Padding(
-                                      padding:
-                                          const EdgeInsets.only(bottom: 5),
-                                      child: GestureDetector(
-                                        onTap: () {
-                                          // TODO: launch url
-                                        },
-                                        child: Text(
-                                          url,
-                                          style: GoogleFonts.archivoBlack(
-                                            color: Color(0xFF64B5F6),
-                                            fontSize: 12,
-                                            decoration: TextDecoration.underline,
-                                            decorationColor: Color(0xFF64B5F6),
+                                ..._liveSources
+                                    .take(3)
+                                    .map(
+                                      (url) => Padding(
+                                        padding: const EdgeInsets.only(
+                                          bottom: 5,
+                                        ),
+                                        child: GestureDetector(
+                                          onTap: () {
+                                            html.window.open(url, '_blank');
+                                          },
+                                          child: Text(
+                                            url,
+                                            style: GoogleFonts.archivoBlack(
+                                              color: Color(0xFF64B5F6),
+                                              fontSize: 12,
+                                              decoration:
+                                                  TextDecoration.underline,
+                                              decorationColor: Color(
+                                                0xFF64B5F6,
+                                              ),
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
-                                    )),
+                                    ),
                                 // view all
                                 if (_liveSources.length <= 3)
                                   GestureDetector(
@@ -723,7 +911,8 @@ class _AsteroidGameState extends State<AsteroidGame> {
                                       context,
                                       MaterialPageRoute(
                                         builder: (_) => SourcesScreen(
-                                            sources: _liveSources),
+                                          sources: _liveSources,
+                                        ),
                                       ),
                                     ),
                                     child: Padding(
@@ -747,9 +936,13 @@ class _AsteroidGameState extends State<AsteroidGame> {
                         const SizedBox(height: 16),
                         TextButton(
                           onPressed: widget.onGameEnd,
-                          child: Text('Close',
-                              style: GoogleFonts.archivoBlack(
-                                  color: Colors.white38, fontSize: 13)),
+                          child: Text(
+                            'Close',
+                            style: GoogleFonts.archivoBlack(
+                              color: Colors.white38,
+                              fontSize: 13,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -843,8 +1036,10 @@ class _AsteroidPainter extends CustomPainter {
 
 // stars
 class _StarsPainter extends CustomPainter {
-  final List<Offset> _stars =
-      List.generate(80, (_) => Offset(Random().nextDouble(), Random().nextDouble()));
+  final List<Offset> _stars = List.generate(
+    80,
+    (_) => Offset(Random().nextDouble(), Random().nextDouble()),
+  );
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -890,12 +1085,16 @@ class _GameButton extends StatelessWidget {
         ),
         child: label != null
             ? Center(
-                child: Text(label!,
-                    style: GoogleFonts.archivoBlack(
-                        color: yellow,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1)))
+                child: Text(
+                  label!,
+                  style: GoogleFonts.archivoBlack(
+                    color: yellow,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1,
+                  ),
+                ),
+              )
             : const Icon(Icons.arrow_left_rounded, color: yellow, size: 22),
       ),
     );
@@ -917,18 +1116,22 @@ class _MainLayoutState extends State<MainLayout>
 
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _topicController = TextEditingController();
-  final GlobalKey<_AsteroidGameState> _gameKey = GlobalKey();
+  GlobalKey<_AsteroidGameState> _gameKey = GlobalKey();
 
   late AnimationController _bounceController;
   late Animation<double> _bounceAnimation;
 
   bool _showGame = false;
   bool _showPopup = false;
+  bool _isGenerating = false;
+  int _backendStatusIndex = 0;
   bool _isDetailed = false;
   double _slideCount = 8;
-  int _selectedTemplate = -1;      
+  int _selectedTemplate = -1;
   String? _uploadedTemplateName;
   String? _uploadedPdfName;
+  Uint8List? _uploadedPdfBytes;
+  Uint8List? _uploadedTemplateBytes;
 
   // json from backend
   List<Map<String, dynamic>> _templates = [];
@@ -936,10 +1139,26 @@ class _MainLayoutState extends State<MainLayout>
   String? _templatesError;
 
   final List<Map<String, String>> creators = [
-    {"name": "Khushi",    "desc": "Fits the Flutter",          "image": "assets/images/khushi.jpg"},
-    {"name": "Achal",     "desc": "Presents the Presentations", "image": "assets/images/achal.jpg"},
-    {"name": "Deepanshi", "desc": "Copies the Writes",          "image": "assets/images/deepanshi.jpg"},
-    {"name": "Vanshvi",   "desc": "Researches the Web",                    "image": "assets/images/vanshvi.jpg"},
+    {
+      "name": "Khushi",
+      "desc": "Fits the Flutter",
+      "image": "assets/images/khushi.jpg",
+    },
+    {
+      "name": "Achal",
+      "desc": "Presents the Presentations",
+      "image": "assets/images/achal.jpg",
+    },
+    {
+      "name": "Deepanshi",
+      "desc": "Copies the Writes",
+      "image": "assets/images/deepanshi.jpg",
+    },
+    {
+      "name": "Vanshvi",
+      "desc": "Researches the Web",
+      "image": "assets/images/vanshvi.jpg",
+    },
   ];
 
   @override
@@ -957,27 +1176,12 @@ class _MainLayoutState extends State<MainLayout>
 
   Future<void> _fetchTemplates() async {
     try {
-      // TODO: replace with your real backend URL
-      // final uri = Uri.parse('http://your-backend/templates');
-      // final res = await http.get(uri);
-      // final list = jsonDecode(res.body) as List;
-      // setState(() {
-      //   _templates = list.map((e) => Map<String, dynamic>.from(e)).toList();
-      //   _templatesLoading = false;
-      // });
-
-      // ── Simulated response — remove once backend is ready ──
-      await Future.delayed(const Duration(milliseconds: 800));
+      final res = await html.HttpRequest.getString(
+        'http://127.0.0.1:8000/templates',
+      );
+      final list = jsonDecode(res) as List;
       setState(() {
-        _templates = List.generate(9, (i) => {
-          "id": "t$i",
-          "label": [
-            "Corporate Blue", "Dark Minimal", "Bold & Vibrant",
-            "Clean White", "Executive Navy", "Pastel Soft",
-            "Tech Neon", "Earthy Tones", "Gradient Mesh",
-          ][i],
-          "thumbnail_url": null, // replace with real URLs from backend
-        });
+        _templates = list.map((e) => Map<String, dynamic>.from(e)).toList();
         _templatesLoading = false;
       });
     } catch (e) {
@@ -1018,10 +1222,20 @@ class _MainLayoutState extends State<MainLayout>
         "topic": _topicController.text.trim(),
         "deck_style": _isDetailed ? "detailed" : "concise",
         "num_slides": _slideCount.round(),
+        "template_id":
+            _selectedTemplate >= 0 ? _templates[_selectedTemplate]['id'] : null,
+        if (_uploadedTemplateBytes != null)
+          "template_bytes": base64Encode(_uploadedTemplateBytes!),
+        if (_uploadedPdfBytes != null)
+          "pdf_bytes": base64Encode(_uploadedPdfBytes!),
       };
 
   void _onGenerate() {
-    setState(() => _showPopup = true);
+    setState(() {
+      _showPopup = true;
+      _isGenerating = true;
+      _backendStatusIndex = 0;
+    });
   }
 
   void _onLaunchGame() {
@@ -1033,7 +1247,13 @@ class _MainLayoutState extends State<MainLayout>
 
   void _onPopupClose() => setState(() => _showPopup = false);
 
-  void _onGameEnd() => setState(() => _showGame = false);
+  void _onGameEnd() {
+    setState(() {
+      _showGame = false;
+      _isGenerating = false;
+    });
+    _gameKey = GlobalKey(); // Reset the key so a new game can start next time
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1073,10 +1293,10 @@ class _MainLayoutState extends State<MainLayout>
 
                               ConstrainedBox(
                                 constraints: BoxConstraints(
-                                    maxWidth: screenWidth * 0.6),
+                                  maxWidth: screenWidth * 0.6,
+                                ),
                                 child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     // topic & generate
                                     IntrinsicHeight(
@@ -1088,55 +1308,70 @@ class _MainLayoutState extends State<MainLayout>
                                             child: TextField(
                                               controller: _topicController,
                                               style: const TextStyle(
-                                                  color: Colors.black,
-                                                  fontSize: 15),
+                                                color: Colors.black,
+                                                fontSize: 15,
+                                              ),
                                               onSubmitted: (_) {
-                                                if (_topicController.text.trim().isNotEmpty) _scrollToTemplates();
+                                                if (_topicController.text
+                                                    .trim()
+                                                    .isNotEmpty)
+                                                  _scrollToTemplates();
                                               },
-                                              decoration:
-                                                  const InputDecoration(
+                                              decoration: const InputDecoration(
                                                 hintText:
-                                                    'Enter your presentation topic...',
+                                                    'Enter a story topic...',
                                                 hintStyle: TextStyle(
-                                                    color: Colors.black45),
+                                                  color: Colors.black45,
+                                                ),
                                                 filled: true,
                                                 fillColor: Colors.white,
                                                 contentPadding:
                                                     EdgeInsets.symmetric(
-                                                        horizontal: 20,
-                                                        vertical: 18),
+                                                      horizontal: 20,
+                                                      vertical: 18,
+                                                    ),
                                                 border: OutlineInputBorder(
                                                   borderRadius:
                                                       BorderRadius.only(
-                                                    topLeft:
-                                                        Radius.circular(12),
-                                                    bottomLeft:
-                                                        Radius.circular(12),
-                                                  ),
+                                                        topLeft:
+                                                            Radius.circular(12),
+                                                        bottomLeft:
+                                                            Radius.circular(12),
+                                                      ),
                                                   borderSide: BorderSide.none,
                                                 ),
                                                 enabledBorder:
                                                     OutlineInputBorder(
-                                                  borderRadius:
-                                                      BorderRadius.only(
-                                                    topLeft:
-                                                        Radius.circular(12),
-                                                    bottomLeft:
-                                                        Radius.circular(12),
-                                                  ),
-                                                  borderSide: BorderSide.none,
-                                                ),
+                                                      borderRadius:
+                                                          BorderRadius.only(
+                                                            topLeft:
+                                                                Radius.circular(
+                                                                  12,
+                                                                ),
+                                                            bottomLeft:
+                                                                Radius.circular(
+                                                                  12,
+                                                                ),
+                                                          ),
+                                                      borderSide:
+                                                          BorderSide.none,
+                                                    ),
                                                 focusedBorder:
                                                     OutlineInputBorder(
-                                                  borderRadius:
-                                                      BorderRadius.only(
-                                                    topLeft:
-                                                        Radius.circular(12),
-                                                    bottomLeft:
-                                                        Radius.circular(12),
-                                                  ),
-                                                  borderSide: BorderSide.none,
-                                                ),
+                                                      borderRadius:
+                                                          BorderRadius.only(
+                                                            topLeft:
+                                                                Radius.circular(
+                                                                  12,
+                                                                ),
+                                                            bottomLeft:
+                                                                Radius.circular(
+                                                                  12,
+                                                                ),
+                                                          ),
+                                                      borderSide:
+                                                          BorderSide.none,
+                                                    ),
                                               ),
                                             ),
                                           ),
@@ -1144,31 +1379,43 @@ class _MainLayoutState extends State<MainLayout>
                                             color: yellow,
                                             borderRadius:
                                                 const BorderRadius.only(
-                                              topRight: Radius.circular(12),
-                                              bottomRight:
-                                                  Radius.circular(12),
-                                            ),
+                                                  topRight: Radius.circular(12),
+                                                  bottomRight: Radius.circular(
+                                                    12,
+                                                  ),
+                                                ),
                                             child: InkWell(
                                               onTap: () {
-                                                final topic = _topicController.text.trim();
+                                                final topic = _topicController
+                                                    .text
+                                                    .trim();
                                                 if (topic.isEmpty) return;
                                                 _scrollToTemplates();
                                               },
                                               borderRadius:
                                                   const BorderRadius.only(
-                                                topRight: Radius.circular(12),
-                                                bottomRight:
-                                                    Radius.circular(12),
-                                              ),
-                                            child: Padding(
-                                                padding: const EdgeInsets.symmetric(
-                                                    horizontal: 24),
+                                                    topRight: Radius.circular(
+                                                      12,
+                                                    ),
+                                                    bottomRight:
+                                                        Radius.circular(12),
+                                                  ),
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 24,
+                                                    ),
                                                 child: Center(
-                                                  child: Text('Next →',
-                                                      style: GoogleFonts.archivoBlack(
+                                                  child: Text(
+                                                    'Next →',
+                                                    style:
+                                                        GoogleFonts.archivoBlack(
                                                           color: Colors.black,
-                                                          fontWeight: FontWeight.bold,
-                                                          fontSize: 15)),
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          fontSize: 15,
+                                                        ),
+                                                  ),
                                                 ),
                                               ),
                                             ),
@@ -1182,25 +1429,32 @@ class _MainLayoutState extends State<MainLayout>
                                     // deck style toggle
                                     Container(
                                       padding: const EdgeInsets.symmetric(
-                                          horizontal: 16, vertical: 12),
+                                        horizontal: 16,
+                                        vertical: 12,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color:
-                                            Colors.white.withOpacity(0.06),
-                                        borderRadius:
-                                            BorderRadius.circular(12),
+                                        color: Colors.white.withOpacity(0.06),
+                                        borderRadius: BorderRadius.circular(12),
                                         border: Border.all(
-                                            color: Colors.white12, width: 1),
+                                          color: Colors.white12,
+                                          width: 1,
+                                        ),
                                       ),
                                       child: Row(
                                         children: [
-                                          const Icon(Icons.style_outlined,
-                                              color: Colors.white54,
-                                              size: 16),
+                                          const Icon(
+                                            Icons.style_outlined,
+                                            color: Colors.white54,
+                                            size: 16,
+                                          ),
                                           const SizedBox(width: 10),
-                                          const Text('Deck Style',
-                                              style: TextStyle(
-                                                  color: Colors.white70,
-                                                  fontSize: 13)),
+                                          const Text(
+                                            'Deck Style',
+                                            style: TextStyle(
+                                              color: Colors.white70,
+                                              fontSize: 13,
+                                            ),
+                                          ),
                                           const Spacer(),
                                           Text(
                                             'Concise',
@@ -1218,13 +1472,14 @@ class _MainLayoutState extends State<MainLayout>
                                           Switch(
                                             value: _isDetailed,
                                             onChanged: (val) => setState(
-                                                () => _isDetailed = val),
+                                              () => _isDetailed = val,
+                                            ),
                                             activeColor: yellow,
-                                            activeTrackColor:
-                                                yellow.withOpacity(0.3),
+                                            activeTrackColor: yellow
+                                                .withOpacity(0.3),
                                             inactiveThumbColor: yellow,
-                                            inactiveTrackColor:
-                                                yellow.withOpacity(0.3),
+                                            inactiveTrackColor: yellow
+                                                .withOpacity(0.3),
                                           ),
                                           const SizedBox(width: 8),
                                           Text(
@@ -1248,46 +1503,53 @@ class _MainLayoutState extends State<MainLayout>
                                     // slide count slider
                                     Container(
                                       padding: const EdgeInsets.symmetric(
-                                          horizontal: 16, vertical: 10),
+                                        horizontal: 16,
+                                        vertical: 10,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color:
-                                            Colors.white.withOpacity(0.06),
-                                        borderRadius:
-                                            BorderRadius.circular(12),
+                                        color: Colors.white.withOpacity(0.06),
+                                        borderRadius: BorderRadius.circular(12),
                                         border: Border.all(
-                                            color: Colors.white12, width: 1),
+                                          color: Colors.white12,
+                                          width: 1,
+                                        ),
                                       ),
                                       child: Row(
                                         children: [
-                                          const Icon(Icons.layers_outlined,
-                                              color: Colors.white54,
-                                              size: 16),
+                                          const Icon(
+                                            Icons.layers_outlined,
+                                            color: Colors.white54,
+                                            size: 16,
+                                          ),
                                           const SizedBox(width: 10),
-                                          const Text('Slides',
-                                              style: TextStyle(
-                                                  color: Colors.white70,
-                                                  fontSize: 13)),
+                                          const Text(
+                                            'Slides',
+                                            style: TextStyle(
+                                              color: Colors.white70,
+                                              fontSize: 13,
+                                            ),
+                                          ),
                                           const SizedBox(width: 12),
                                           Expanded(
                                             child: SliderTheme(
                                               data: SliderTheme.of(context)
                                                   .copyWith(
-                                                activeTrackColor: yellow,
-                                                inactiveTrackColor:
-                                                    yellow.withOpacity(0.2),
-                                                thumbColor: yellow,
-                                                overlayColor:
-                                                    yellow.withOpacity(0.15),
-                                                trackHeight: 3,
-                                              ),
+                                                    activeTrackColor: yellow,
+                                                    inactiveTrackColor: yellow
+                                                        .withOpacity(0.2),
+                                                    thumbColor: yellow,
+                                                    overlayColor: yellow
+                                                        .withOpacity(0.15),
+                                                    trackHeight: 3,
+                                                  ),
                                               child: Slider(
                                                 value: _slideCount,
                                                 min: 5,
                                                 max: 15,
                                                 divisions: 10,
-                                                onChanged: (val) =>
-                                                    setState(() =>
-                                                        _slideCount = val),
+                                                onChanged: (val) => setState(
+                                                  () => _slideCount = val,
+                                                ),
                                               ),
                                             ),
                                           ),
@@ -1296,9 +1558,10 @@ class _MainLayoutState extends State<MainLayout>
                                             child: Text(
                                               '${_slideCount.round()}',
                                               style: const TextStyle(
-                                                  color: yellow,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 15),
+                                                color: yellow,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 15,
+                                              ),
                                             ),
                                           ),
                                         ],
@@ -1339,9 +1602,10 @@ class _MainLayoutState extends State<MainLayout>
                                 ),
                                 const SizedBox(height: 6),
                                 const Icon(
-                                    Icons.keyboard_arrow_down_rounded,
-                                    color: yellow,
-                                    size: 34),
+                                  Icons.keyboard_arrow_down_rounded,
+                                  color: yellow,
+                                  size: 34,
+                                ),
                               ],
                             ),
                           ),
@@ -1367,33 +1631,46 @@ class _MainLayoutState extends State<MainLayout>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               GestureDetector(
-                                onTap: () => _scrollController.animateTo(0,
-                                    duration: const Duration(milliseconds: 800),
-                                    curve: Curves.easeInOutQuart),
+                                onTap: () => _scrollController.animateTo(
+                                  0,
+                                  duration: const Duration(milliseconds: 800),
+                                  curve: Curves.easeInOutQuart,
+                                ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(Icons.arrow_back,
-                                        color: Colors.white54, size: 18),
+                                    const Icon(
+                                      Icons.arrow_back,
+                                      color: Colors.white54,
+                                      size: 18,
+                                    ),
                                     const SizedBox(width: 6),
-                                    Text('Back',
-                                        style: GoogleFonts.archivoBlack(
-                                            color: Colors.white54,
-                                            fontSize: 13)),
+                                    Text(
+                                      'Back',
+                                      style: GoogleFonts.archivoBlack(
+                                        color: Colors.white54,
+                                        fontSize: 13,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
                               const SizedBox(height: 20),
-                              Text('Choose a Template',
-                                  style: GoogleFonts.archivoBlack(
-                                      color: Colors.white,
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.bold)),
+                              Text(
+                                'Choose a Template',
+                                style: GoogleFonts.archivoBlack(
+                                  color: Colors.white,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                               const SizedBox(height: 4),
                               Text(
                                 '${_templates.length} templates available',
                                 style: GoogleFonts.archivoBlack(
-                                    color: Colors.white38, fontSize: 12),
+                                  color: Colors.white38,
+                                  fontSize: 12,
+                                ),
                               ),
                               const SizedBox(height: 14),
                             ],
@@ -1405,109 +1682,124 @@ class _MainLayoutState extends State<MainLayout>
                           child: _templatesLoading
                               ? const Center(
                                   child: CircularProgressIndicator(
-                                      color: yellow))
+                                    color: yellow,
+                                  ),
+                                )
                               : _templatesError != null
-                                  ? Center(
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const Icon(Icons.error_outline,
-                                              color: Colors.white38, size: 32),
-                                          const SizedBox(height: 8),
-                                          Text(_templatesError!,
-                                              style: GoogleFonts.archivoBlack(
-                                                  color: Colors.white38,
-                                                  fontSize: 13)),
-                                          const SizedBox(height: 12),
-                                          TextButton(
-                                            onPressed: () {
-                                              setState(() {
-                                                _templatesLoading = true;
-                                                _templatesError = null;
-                                              });
-                                              _fetchTemplates();
-                                            },
-                                            child: Text('Retry',
-                                                style:
-                                                    GoogleFonts.archivoBlack(
-                                                        color: yellow,
-                                                        fontSize: 13)),
-                                          ),
-                                        ],
+                              ? Center(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.error_outline,
+                                        color: Colors.white38,
+                                        size: 32,
                                       ),
-                                    )
-                                  : Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 48),
-                                      child: GridView.builder(
-                                        itemCount: _templates.length,
-                                        gridDelegate:
-                                            const SliverGridDelegateWithFixedCrossAxisCount(
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        _templatesError!,
+                                        style: GoogleFonts.archivoBlack(
+                                          color: Colors.white38,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      TextButton(
+                                        onPressed: () {
+                                          setState(() {
+                                            _templatesLoading = true;
+                                            _templatesError = null;
+                                          });
+                                          _fetchTemplates();
+                                        },
+                                        child: Text(
+                                          'Retry',
+                                          style: GoogleFonts.archivoBlack(
+                                            color: yellow,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 48,
+                                  ),
+                                  child: GridView.builder(
+                                    itemCount: _templates.length,
+                                    gridDelegate:
+                                        const SliverGridDelegateWithFixedCrossAxisCount(
                                           crossAxisCount: 2,
                                           crossAxisSpacing: 14,
                                           mainAxisSpacing: 14,
                                           childAspectRatio: 2.6,
                                         ),
-                                        itemBuilder: (context, i) {
-                                          final t = _templates[i];
-                                          final selected =
-                                              _selectedTemplate == i;
-                                          final thumbUrl =
-                                              t['thumbnail_url'] as String?;
-                                          return GestureDetector(
-                                            onTap: () => setState(() {
-                                              _selectedTemplate = i;
-                                              _uploadedTemplateName = null;
-                                            }),
-                                            child: AnimatedContainer(
-                                              duration: const Duration(
-                                                  milliseconds: 200),
-                                              decoration: BoxDecoration(
-                                                color: selected
-                                                    ? yellow.withOpacity(0.12)
-                                                    : Colors.white
-                                                        .withOpacity(0.05),
+                                    itemBuilder: (context, i) {
+                                      final t = _templates[i];
+                                      final selected = _selectedTemplate == i;
+                                      final previewPath = t['preview'] as String?;
+                                      final thumbUrl = previewPath != null ? 'http://127.0.0.1:8000/$previewPath' : null;
+                                      return GestureDetector(
+                                        onTap: () => setState(() {
+                                          _selectedTemplate = i;
+                                          _uploadedTemplateName = null;
+                                        }),
+                                        child: AnimatedContainer(
+                                          duration: const Duration(
+                                            milliseconds: 200,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: selected
+                                                ? yellow.withOpacity(0.12)
+                                                : Colors.white.withOpacity(
+                                                    0.05,
+                                                  ),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                            border: Border.all(
+                                              color: selected
+                                                  ? yellow
+                                                  : Colors.white12,
+                                              width: selected ? 2 : 1,
+                                            ),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              // thumbnail or placeholder
+                                              ClipRRect(
                                                 borderRadius:
-                                                    BorderRadius.circular(12),
-                                                border: Border.all(
-                                                  color: selected
-                                                      ? yellow
-                                                      : Colors.white12,
-                                                  width: selected ? 2 : 1,
-                                                ),
-                                              ),
-                                              child: Row(
-                                                children: [
-                                                  // thumbnail or placeholder
-                                                  ClipRRect(
-                                                    borderRadius:
-                                                        const BorderRadius.only(
-                                                      topLeft:
-                                                          Radius.circular(10),
+                                                    const BorderRadius.only(
+                                                      topLeft: Radius.circular(
+                                                        10,
+                                                      ),
                                                       bottomLeft:
                                                           Radius.circular(10),
                                                     ),
-                                                    child: thumbUrl != null
-                                                        ? Image.network(
-                                                            thumbUrl,
-                                                            width: 72,
-                                                            fit: BoxFit.cover,
-                                                            errorBuilder: (_,
-                                                                    __,
-                                                                    ___) =>
+                                                child: thumbUrl != null
+                                                    ? Image.network(
+                                                        thumbUrl,
+                                                        width: 72,
+                                                        fit: BoxFit.cover,
+                                                        errorBuilder:
+                                                            (_, __, ___) =>
                                                                 _templatePlaceholder(
-                                                                    selected),
-                                                          )
-                                                        : _templatePlaceholder(
-                                                            selected),
-                                                  ),
-                                                  const SizedBox(width: 12),
-                                                  Expanded(
-                                                    child: Text(
-                                                      t['label'] as String? ??
-                                                          'Template ${i + 1}',
-                                                      style: GoogleFonts
-                                                          .archivoBlack(
+                                                                  selected,
+                                                                ),
+                                                      )
+                                                    : _templatePlaceholder(
+                                                        selected,
+                                                      ),
+                                              ),
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: Text(
+                                                  t['name'] as String? ??
+                                                      'Template ${i + 1}',
+                                                  style:
+                                                      GoogleFonts.archivoBlack(
                                                         color: selected
                                                             ? yellow
                                                             : Colors.white70,
@@ -1516,25 +1808,27 @@ class _MainLayoutState extends State<MainLayout>
                                                             ? FontWeight.bold
                                                             : FontWeight.normal,
                                                       ),
-                                                    ),
-                                                  ),
-                                                  if (selected)
-                                                    Padding(
-                                                      padding:
-                                                          const EdgeInsets.only(
-                                                              right: 12),
-                                                      child: Icon(
-                                                          Icons.check_circle,
-                                                          color: yellow,
-                                                          size: 18),
-                                                    ),
-                                                ],
+                                                ),
                                               ),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ),
+                                              if (selected)
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                        right: 12,
+                                                      ),
+                                                  child: Icon(
+                                                    Icons.check_circle,
+                                                    color: yellow,
+                                                    size: 18,
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
                         ),
 
                         Padding(
@@ -1544,17 +1838,29 @@ class _MainLayoutState extends State<MainLayout>
                             children: [
                               // upload template
                               GestureDetector(
-                                onTap: () {
-                                  // TODO: file picker for .pptx
-                                  setState(() {
-                                    _selectedTemplate = -2;
-                                    _uploadedTemplateName = 'my_template.pptx';
-                                  });
+                                onTap: () async {
+                                  final result =
+                                      await FilePicker.platform.pickFiles(
+                                        type: FileType.custom,
+                                        allowedExtensions: ['pptx'],
+                                        withData: true,
+                                      );
+                                  if (result != null) {
+                                    setState(() {
+                                      _selectedTemplate = -2;
+                                      _uploadedTemplateName =
+                                          result.files.single.name;
+                                      _uploadedTemplateBytes =
+                                          result.files.single.bytes;
+                                    });
+                                  }
                                 },
                                 child: AnimatedContainer(
                                   duration: const Duration(milliseconds: 200),
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 16, vertical: 12),
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: _selectedTemplate == -2
                                         ? yellow.withOpacity(0.1)
@@ -1569,11 +1875,13 @@ class _MainLayoutState extends State<MainLayout>
                                   ),
                                   child: Row(
                                     children: [
-                                      Icon(Icons.upload_file,
-                                          color: _selectedTemplate == -2
-                                              ? yellow
-                                              : Colors.white38,
-                                          size: 18),
+                                      Icon(
+                                        Icons.upload_file,
+                                        color: _selectedTemplate == -2
+                                            ? yellow
+                                            : Colors.white38,
+                                        size: 18,
+                                      ),
                                       const SizedBox(width: 10),
                                       Text(
                                         _selectedTemplate == -2 &&
@@ -1589,8 +1897,11 @@ class _MainLayoutState extends State<MainLayout>
                                       ),
                                       if (_selectedTemplate == -2) ...[
                                         const Spacer(),
-                                        Icon(Icons.check_circle,
-                                            color: yellow, size: 16),
+                                        Icon(
+                                          Icons.check_circle,
+                                          color: yellow,
+                                          size: 16,
+                                        ),
                                       ],
                                     ],
                                   ),
@@ -1601,15 +1912,28 @@ class _MainLayoutState extends State<MainLayout>
 
                               // PDF upload
                               GestureDetector(
-                                onTap: () {
-                                  // TODO: file picker for .pdf
-                                  setState(
-                                      () => _uploadedPdfName = 'my_notes.pdf');
+                                onTap: () async {
+                                  final result =
+                                      await FilePicker.platform.pickFiles(
+                                        type: FileType.custom,
+                                        allowedExtensions: ['pdf'],
+                                        withData: true,
+                                      );
+                                  if (result != null) {
+                                    setState(() {
+                                      _uploadedPdfName =
+                                          result.files.single.name;
+                                      _uploadedPdfBytes =
+                                          result.files.single.bytes;
+                                    });
+                                  }
                                 },
                                 child: AnimatedContainer(
                                   duration: const Duration(milliseconds: 200),
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 16, vertical: 12),
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: _uploadedPdfName != null
                                         ? yellow.withOpacity(0.1)
@@ -1619,17 +1943,18 @@ class _MainLayoutState extends State<MainLayout>
                                       color: _uploadedPdfName != null
                                           ? yellow
                                           : Colors.white12,
-                                      width:
-                                          _uploadedPdfName != null ? 2 : 1,
+                                      width: _uploadedPdfName != null ? 2 : 1,
                                     ),
                                   ),
                                   child: Row(
                                     children: [
-                                      Icon(Icons.picture_as_pdf,
-                                          color: _uploadedPdfName != null
-                                              ? yellow
-                                              : Colors.white38,
-                                          size: 18),
+                                      Icon(
+                                        Icons.picture_as_pdf,
+                                        color: _uploadedPdfName != null
+                                            ? yellow
+                                            : Colors.white38,
+                                        size: 18,
+                                      ),
                                       const SizedBox(width: 10),
                                       Expanded(
                                         child: Text(
@@ -1644,14 +1969,22 @@ class _MainLayoutState extends State<MainLayout>
                                         ),
                                       ),
                                       if (_uploadedPdfName != null) ...[
-                                        Icon(Icons.check_circle,
-                                            color: yellow, size: 16),
+                                        Icon(
+                                          Icons.check_circle,
+                                          color: yellow,
+                                          size: 16,
+                                        ),
                                         const SizedBox(width: 6),
                                         GestureDetector(
-                                          onTap: () => setState(
-                                              () => _uploadedPdfName = null),
-                                          child: const Icon(Icons.close,
-                                              color: Colors.white38, size: 15),
+                                          onTap: () => setState(() {
+                                            _uploadedPdfName = null;
+                                            _uploadedPdfBytes = null;
+                                          }),
+                                          child: const Icon(
+                                            Icons.close,
+                                            color: Colors.white38,
+                                            size: 15,
+                                          ),
                                         ),
                                       ],
                                     ],
@@ -1666,20 +1999,26 @@ class _MainLayoutState extends State<MainLayout>
                                 width: double.infinity,
                                 child: ElevatedButton.icon(
                                   onPressed: _onGenerate,
-                                  icon: const Icon(Icons.auto_awesome,
-                                      size: 18),
-                                  label: Text('Generate Presentation',
-                                      style: GoogleFonts.archivoBlack(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.bold)),
+                                  icon: const Icon(
+                                    Icons.auto_awesome,
+                                    size: 18,
+                                  ),
+                                  label: Text(
+                                    'Generate Presentation',
+                                    style: GoogleFonts.archivoBlack(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: yellow,
                                     foregroundColor: Colors.black,
                                     padding: const EdgeInsets.symmetric(
-                                        vertical: 16),
+                                      vertical: 16,
+                                    ),
                                     shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(12)),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -1694,9 +2033,12 @@ class _MainLayoutState extends State<MainLayout>
                                     animation: _bounceAnimation,
                                     builder: (context, child) =>
                                         Transform.translate(
-                                      offset: Offset(0, _bounceAnimation.value),
-                                      child: child,
-                                    ),
+                                          offset: Offset(
+                                            0,
+                                            _bounceAnimation.value,
+                                          ),
+                                          child: child,
+                                        ),
                                     child: Column(
                                       children: [
                                         Text(
@@ -1735,40 +2077,65 @@ class _MainLayoutState extends State<MainLayout>
                   child: Container(
                     color: Colors.white,
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 40, vertical: 9),
+                      horizontal: 40,
+                      vertical: 9,
+                    ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text('Built By',
-                            style: GoogleFonts.archivoBlack(
-                                color: Colors.black,
-                                fontSize: 36,
-                                fontWeight: FontWeight.bold)),
+                        Text(
+                          'Built By',
+                          style: GoogleFonts.archivoBlack(
+                            color: Colors.black,
+                            fontSize: 36,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         const SizedBox(height: 16),
                         SizedBox(
                           width: 560,
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Row(children: [
-                                Expanded(
-                                    child: _creatorBox(creators[0]['name']!,
-                                        creators[0]['desc']!, creators[0]['image']!)),
-                                const SizedBox(width: 30),
-                                Expanded(
-                                    child: _creatorBox(creators[1]['name']!,
-                                        creators[1]['desc']!, creators[1]['image']!)),
-                              ]),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _creatorBox(
+                                      creators[0]['name']!,
+                                      creators[0]['desc']!,
+                                      creators[0]['image']!,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 30),
+                                  Expanded(
+                                    child: _creatorBox(
+                                      creators[1]['name']!,
+                                      creators[1]['desc']!,
+                                      creators[1]['image']!,
+                                    ),
+                                  ),
+                                ],
+                              ),
                               const SizedBox(height: 11),
-                              Row(children: [
-                                Expanded(
-                                    child: _creatorBox(creators[2]['name']!,
-                                        creators[2]['desc']!, creators[2]['image']!)),
-                                const SizedBox(width: 30),
-                                Expanded(
-                                    child: _creatorBox(creators[3]['name']!,
-                                        creators[3]['desc']!, creators[3]['image']!)),
-                              ]),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _creatorBox(
+                                      creators[2]['name']!,
+                                      creators[2]['desc']!,
+                                      creators[2]['image']!,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 30),
+                                  Expanded(
+                                    child: _creatorBox(
+                                      creators[3]['name']!,
+                                      creators[3]['desc']!,
+                                      creators[3]['image']!,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
                         ),
@@ -1780,29 +2147,38 @@ class _MainLayoutState extends State<MainLayout>
             ),
           ),
 
-          // generating pop up
-          if (_showPopup)
+          // game overlay (runs in background to contact backend)
+          if (_isGenerating || _showGame)
             Positioned.fill(
-              child: _GeneratingPopup(
-                statusMessages: const [
-                  'Inferring search queries...',
-                  'Scraping live web data...',
-                  'Synthesizing narrative...',
-                  'Fact-checking claims...',
-                  'Generating visual assets...',
-                ],
-                onPlayGame: _onLaunchGame,
+              child: Offstage(
+                offstage: !_showGame, // Keeps the backend connection alive while hidden
+                child: AsteroidGame(
+                  key: _gameKey,
+                  onGameEnd: _onGameEnd,
+                  onStatusUpdate: (idx) => setState(() => _backendStatusIndex = idx),
+                  onGenerationComplete: () => setState(() {
+                    _showPopup = false;
+                    _showGame = true;
+                  }),
+                  sources: const [],
+                  payload: _buildPayload(),
+                ),
               ),
             ),
 
-          // game overlay
-          if (_showGame)
+          // generating pop up (overlays the game until user clicks play)
+          if (_showPopup)
             Positioned.fill(
-              child: AsteroidGame(
-                key: _gameKey,
-                onGameEnd: _onGameEnd,
-                sources: const [],
-                payload: _buildPayload(),
+              child: _GeneratingPopup(
+                statusIndex: _backendStatusIndex,
+                statusMessages: const [
+                  '🔍 Inferring search queries...',
+                  '🌐 Scraping live web data...',
+                  '🧠 Synthesizing narrative...',
+                  '⚖️ Fact-checking claims...',
+                  '🎨 Generating visual assets...',
+                ],
+                onPlayGame: _onLaunchGame,
               ),
             ),
         ],
@@ -1814,8 +2190,11 @@ class _MainLayoutState extends State<MainLayout>
     return Container(
       width: 72,
       color: selected ? yellow.withOpacity(0.2) : Colors.white10,
-      child: Icon(Icons.slideshow,
-          color: selected ? yellow : Colors.white24, size: 24),
+      child: Icon(
+        Icons.slideshow,
+        color: selected ? yellow : Colors.white24,
+        size: 24,
+      ),
     );
   }
 
@@ -1843,14 +2222,19 @@ class _MainLayoutState extends State<MainLayout>
           ),
         ),
         const SizedBox(height: 8),
-        Text(name,
-            style: const TextStyle(
-                color: Colors.black,
-                fontSize: 15,
-                fontWeight: FontWeight.bold)),
-        Text(role,
-            style: const TextStyle(color: Colors.black54, fontSize: 11),
-            textAlign: TextAlign.center),
+        Text(
+          name,
+          style: const TextStyle(
+            color: Colors.black,
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          role,
+          style: const TextStyle(color: Colors.black54, fontSize: 11),
+          textAlign: TextAlign.center,
+        ),
       ],
     );
   }
@@ -1861,10 +2245,12 @@ class _MainLayoutState extends State<MainLayout>
 class _GeneratingPopup extends StatefulWidget {
   final List<String> statusMessages;
   final VoidCallback onPlayGame;
+  final int statusIndex;
 
   const _GeneratingPopup({
     required this.statusMessages,
     required this.onPlayGame,
+    required this.statusIndex,
   });
 
   @override
@@ -1872,25 +2258,7 @@ class _GeneratingPopup extends StatefulWidget {
 }
 
 class _GeneratingPopupState extends State<_GeneratingPopup> {
-  int _statusIndex = 0;
   bool _waiting = false;
-  Timer? _timer;
-
-  @override
-  void initState() {
-    super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 6), (_) {
-      if (mounted && _statusIndex < widget.statusMessages.length - 1) {
-        setState(() => _statusIndex++);
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -1918,9 +2286,7 @@ class _GeneratingPopupState extends State<_GeneratingPopup> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                _waiting
-                    ? 'Hang tight...'
-                    : 'Cooking your presentation...',
+                _waiting ? 'Hang tight...' : 'Cooking your presentation...',
                 style: GoogleFonts.archivoBlack(color: yellow, fontSize: 20),
                 textAlign: TextAlign.center,
               ),
@@ -1936,8 +2302,8 @@ class _GeneratingPopupState extends State<_GeneratingPopup> {
 
               // status steps
               ...List.generate(widget.statusMessages.length, (i) {
-                final isDone = i < _statusIndex;
-                final isActive = i == _statusIndex;
+                final isDone = i < widget.statusIndex;
+                final isActive = i == widget.statusIndex;
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 5),
                   child: Row(
@@ -1946,13 +2312,21 @@ class _GeneratingPopupState extends State<_GeneratingPopup> {
                         width: 20,
                         height: 20,
                         child: isDone
-                            ? const Icon(Icons.check_circle,
-                                color: Colors.greenAccent, size: 18)
+                            ? const Icon(
+                                Icons.check_circle,
+                                color: Colors.greenAccent,
+                                size: 18,
+                              )
                             : isActive
-                                ? const CircularProgressIndicator(
-                                    strokeWidth: 2, color: yellow)
-                                : const Icon(Icons.circle_outlined,
-                                    color: Colors.white24, size: 18),
+                            ? const CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: yellow,
+                              )
+                            : const Icon(
+                                Icons.circle_outlined,
+                                color: Colors.white24,
+                                size: 18,
+                              ),
                       ),
                       const SizedBox(width: 12),
                       Text(
@@ -1961,11 +2335,12 @@ class _GeneratingPopupState extends State<_GeneratingPopup> {
                           color: isDone
                               ? Colors.greenAccent
                               : isActive
-                                  ? Colors.white
-                                  : Colors.white30,
+                              ? Colors.white
+                              : Colors.white30,
                           fontSize: 13,
-                          fontWeight:
-                              isActive ? FontWeight.bold : FontWeight.normal,
+                          fontWeight: isActive
+                              ? FontWeight.bold
+                              : FontWeight.normal,
                         ),
                       ),
                     ],
@@ -1983,7 +2358,7 @@ class _GeneratingPopupState extends State<_GeneratingPopup> {
                     onPressed: widget.onPlayGame,
                     icon: const Icon(Icons.sports_esports, size: 18),
                     label: Text(
-                      'Enjoy shooting the asteroids till I cook!',
+                      'Enjoy the game till I cook! 🚀',
                       style: GoogleFonts.archivoBlack(fontSize: 14),
                     ),
                     style: ElevatedButton.styleFrom(
@@ -2008,8 +2383,11 @@ class _GeneratingPopupState extends State<_GeneratingPopup> {
                 // waiting mode — just a small "changed my mind" link
                 TextButton.icon(
                   onPressed: () => setState(() => _waiting = false),
-                  icon: const Icon(Icons.sports_esports,
-                      size: 15, color: Colors.white38),
+                  icon: const Icon(
+                    Icons.sports_esports,
+                    size: 15,
+                    color: Colors.white38,
+                  ),
                   label: const Text(
                     'Actually, let me play while I wait',
                     style: TextStyle(color: Colors.white38, fontSize: 13),

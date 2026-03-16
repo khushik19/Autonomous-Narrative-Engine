@@ -61,8 +61,8 @@ TEMPLATES = {
         "name":        "Corporate Minimal",
         "file":        "templates/ppt template 08.pptx",
         "description": "Fresh eco-friendly style", 
-        "accent_color":"#000000",
-        "font_color":"#FFFFFF",
+        "accent_color":"#FFFFFF",
+        "font_color":"#000000",
         "preview":     "previews/Screenshot 2026-03-15 174557.png"
     }
 }

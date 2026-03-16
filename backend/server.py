@@ -32,8 +32,9 @@ async def startup_event():
     def _bg_load():
         try:
             print("\n[Server] Loading models in background...")
-            from agents.copywriter_agent import _load
-            _load()
+            from agents.copywriter_agent import _load_gemini, _load_local
+            _load_gemini()
+            _load_local()
             print("[Server] Models loaded successfully.\n")
         except Exception as e:
             print(f"[Server] Model pre-loading failed (will retry on first request): {e}")

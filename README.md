@@ -54,10 +54,11 @@ Cosmos acts like a 3-person team working together on the backend:
 ## 🚀 Getting Started (Run Locally)
 
 ## Do this 1st
-Take the file from drive: ppt_json_merged_model.zip  
+Take the file from drive: ppt_json_merged_model.zip and .env
 Link: https://drive.google.com/drive/folders/13dW4GvyL4PTxrYhgfCceamH3n1oWxv9S?usp=drive_link
 
 Paste the zip folder inside the backend/models folder
+Paste the .env file inside the backend folder
 
 ### 1. Backend Setup
 Open your terminal, go to the backend folder, and set up your Python environment:

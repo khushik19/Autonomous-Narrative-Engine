@@ -7,7 +7,7 @@ import google.generativeai as genai
 from duckduckgo_search import DDGS
 
 #API
-GEMINI_API_KEY = "AIzaSyD6zJVYoDKJSzG08WcguNdGPL0UZK59jW8"
+GEMINI_API_KEY = "AIzaSyC6q2N8vdaPmjUZCE21svM0T98pmpmdi7w"
 genai.configure(api_key=GEMINI_API_KEY)
 
 # Using gemini-1.5-flash for higher quota limits

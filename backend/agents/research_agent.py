@@ -14,7 +14,7 @@ load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=GEMINI_API_KEY)
 
-# Using gemini-1.5-flash for higher quota limits
+# Using gemini-3-flash-preview for high performance
 model = genai.GenerativeModel('models/gemini-3-flash-preview')
 
 def extract_text_from_pdf(pdf_path: str) -> str:

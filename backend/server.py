@@ -1,4 +1,7 @@
 # server.py
+from dotenv import load_dotenv
+load_dotenv() # Load API keys and other env vars
+
 from fastapi import FastAPI, UploadFile, File, Form, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -125,7 +128,12 @@ async def websocket_generate(websocket: WebSocket):
         num_slides = payload.get("num_slides") or 8
         pdf_bytes_b64 = payload.get("pdf_bytes")
         
-        print(f"--- [Server] WebSocket request — Topic: {topic}, Template: {template_id}, Style: {deck_style}, Slides: {num_slides} ---")
+        print(f"\n--- [Server] RECEIVED WEBSOCKET PAYLOAD ---")
+        print(f"Topic: {topic}")
+        print(f"Template: {template_id}")
+        print(f"Style: {deck_style}")
+        print(f"Slides: {num_slides}")
+        print(f"-------------------------------------------\n")
         
         # Parse uploaded template bytes if they exist
         if template_bytes_b64:

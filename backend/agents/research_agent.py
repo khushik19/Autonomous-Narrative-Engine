@@ -3,11 +3,15 @@ import json
 import os
 import requests
 import time
+from dotenv import load_dotenv
 import google.generativeai as genai
 from duckduckgo_search import DDGS
 
-#API
-GEMINI_API_KEY = "AIzaSyC6q2N8vdaPmjUZCE21svM0T98pmpmdi7w"
+# Load environment variables
+load_dotenv()
+
+# API
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=GEMINI_API_KEY)
 
 # Using gemini-1.5-flash for higher quota limits

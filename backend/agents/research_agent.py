@@ -14,7 +14,7 @@ load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=GEMINI_API_KEY)
 
-model = genai.GenerativeModel('models/gemini-2.0-flash-lite')
+model = genai.GenerativeModel('models/gemini-3-flash-preview')
 
 def extract_text_from_pdf(pdf_path: str) -> str:
     """Extracts text from a PDF file using pypdf."""
@@ -113,7 +113,7 @@ class ResearcherAgent:
 
         prompt = f"""
         You are an expert presentation copywriter and fact-checker.
-        Topic: "{topic}"
+        STRICT TOPIC: "{topic}"
         Total Slides: {num_slides}
         Style: {style_instruction}
 
@@ -122,9 +122,11 @@ class ResearcherAgent:
 
         ### INSTRUCTIONS:
         1. Read the SCRAPED KNOWLEDGE carefully.
-        2. Plan a structured {num_slides}-slide presentation.
+        2. Plan a structured {num_slides}-slide presentation STRICTLY about "{topic}".
         3. For each slide, determine a title and content (bullets or text).
-        4. CRITICAL: Use ONLY information from the SCRAPED KNOWLEDGE.
+        4. CRITICAL: Use the SCRAPED KNOWLEDGE as your primary source. 
+           If the SCRAPED KNOWLEDGE is sparse or unavailable for "{topic}", use your internal expert knowledge to create a high-quality presentation about "{topic}" anyway.
+           DO NOT create generic slides; they must be specific to "{topic}".
         5. OUTPUT: Return a raw JSON array of slides. 
         Each slide must have: "slide_number", "title", "slide_type", and at least one of ["subtitle", "bullets", "data"].
         Slide types: 'intro', 'hero', 'bullet_points', 'chart', 'stat', 'quote', 'closing'.

@@ -28,7 +28,7 @@ def _load_gemini():
             print("[Copywriter] No GEMINI_API_KEY found, Gemini unavailable.")
             return None
         genai.configure(api_key=api_key)
-        _gemini_model = genai.GenerativeModel('models/gemini-2.5-flash-lite')
+        _gemini_model = genai.GenerativeModel('models/gemini-3-flash-preview')
         print("[Copywriter] Gemini API ready.")
         return _gemini_model
     except Exception as e:
@@ -138,10 +138,10 @@ def run(input_path: str, output_path: str):
     # ── Try Gemini API first (fast, reliable) ─────────────────────────────────
     slides = _run_gemini(topic, research_text, existing_slides)
 
-    # ── Fallback to local TinyLlama ───────────────────────────────────────────
+    # ── Try Local model as fallback ───────────────────────────────────────────
     if not slides:
         print("[Copywriter] Gemini failed — trying local model...")
-        slides = _run_local(research_text, existing_slides)
+        slides = _run_local(topic, research_text, existing_slides)
 
     # ── Last resort: use Research Agent's raw slides ──────────────────────────
     if not slides and existing_slides:
@@ -192,14 +192,15 @@ def _run_gemini(topic: str, research_text: str, existing_slides: list) -> list |
         if existing_slides:
             slides_json = json.dumps(existing_slides, indent=2)
             prompt = f"""You are an expert presentation copywriter.
-Topic: "{topic}"
+CRITICAL TOPIC: "{topic}"
+You MUST ensure all slides remain strictly focused on this topic.
 
 You have these draft slides from a research agent:
 {slides_json}
 
 Polish them for a professional presentation:
-1. Improve titles to be more engaging and specific.
-2. Make bullet points more detailed, concrete, and insightful.
+1. Improve titles to be more engaging and specific, always related to "{topic}".
+2. Make bullet points more detailed, concrete, and insightful, purely about "{topic}".
 3. Keep the same slide_types and structure.
 4. Ensure each slide has: "slide_number", "title", "slide_type", and at least one of ["subtitle", "bullets", "data"].
 5. Valid slide_types: 'intro', 'hero', 'bullet_points', 'chart', 'stat', 'quote', 'closing'.
@@ -212,15 +213,15 @@ Return ONLY a raw JSON array of slide objects. No markdown, no backticks, no exp
                 research_text = research_text[:4000] + "\n...[TRUNCATED]...\n" + research_text[-4000:]
 
             prompt = f"""You are an expert presentation copywriter.
-Topic: "{topic}"
+TOPIC: "{topic}"
 
-Research Data:
+Research Data for "{topic}":
 {research_text}
 
-Create a structured JSON array of 7-8 slides for a professional presentation:
+Create a structured JSON array of 7-8 slides for a professional presentation about "{topic}":
 1. Each slide must have: "slide_number", "title", "slide_type", and at least one of ["subtitle", "bullets", "data"].
 2. Valid slide_types: 'intro', 'hero', 'bullet_points', 'chart', 'stat', 'quote', 'closing'.
-3. Use detailed, insightful bullet points with concrete facts.
+3. Use detailed, insightful bullet points with concrete facts about "{topic}".
 4. For data visualization slides, include: data: {{ "type": "bar_chart"|"line_chart"|"pie_chart", "labels": [...], "values": [numbers], "xlabel": "...", "ylabel": "..." }}
 
 Return ONLY a raw JSON array. No markdown, no backticks."""
@@ -250,7 +251,7 @@ Return ONLY a raw JSON array. No markdown, no backticks."""
 #  LOCAL MODEL INFERENCE (fallback)
 # ══════════════════════════════════════════════════════════════════════════════
 
-def _run_local(research_text: str, existing_slides: list = None, max_new_tokens: int = 512) -> list | None:
+def _run_local(topic: str, research_text: str, existing_slides: list = None, max_new_tokens: int = 512) -> list | None:
     """Convert research text into slide dicts using local TinyLlama model."""
     try:
         _load_local()
@@ -277,7 +278,8 @@ def _run_local(research_text: str, existing_slides: list = None, max_new_tokens:
 
     prompt = (
         f"{user_tag}\n"
-        "Convert the following research data into a structured JSON array of slides.\n"
+        f"You are an expert presentation copywriter. Topic: {topic}\n"
+        f"Convert the following research data about {topic} into a structured JSON array of slides.\n"
         "Each slide must have: slide_number, title, slide_type, and at least one of: subtitle, bullets, or data.\n"
         "Slide types: 'intro', 'hero', 'bullet_points', 'chart', 'stat', 'quote', 'closing'.\n\n"
         f"{prompt_content}{end_tag}\n"

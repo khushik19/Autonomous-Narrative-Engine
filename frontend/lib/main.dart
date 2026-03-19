@@ -198,8 +198,14 @@ class _AsteroidGameState extends State<AsteroidGame> {
       _socket!.onOpen.listen((_) {
         print("--- [WebSocket] Connected! ---");
         final p = widget.payload;
-        print("--- [WebSocket] Sending Payload: ${jsonEncode(p)} ---");
-        _socket!.send(jsonEncode(p));
+        final jsonStr = jsonEncode(p);
+        print("--- [WebSocket] Sending Payload: $jsonStr ---");
+        try {
+          _socket!.send(jsonStr);
+          print("--- [WebSocket] Data sent successfully ---");
+        } catch (e) {
+          print("--- [WebSocket] Send Error: $e ---");
+        }
       });
 
       _wsSub = _socket!.onMessage.listen((html.MessageEvent event) {
@@ -1232,6 +1238,21 @@ class _MainLayoutState extends State<MainLayout>
   };
 
   void _onGenerate() {
+    final topic = _topicController.text.trim();
+    if (topic.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a topic first!'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 800),
+        curve: Curves.easeInOutQuart,
+      );
+      return;
+    }
     setState(() {
       _showPopup = true;
       _isGenerating = true;

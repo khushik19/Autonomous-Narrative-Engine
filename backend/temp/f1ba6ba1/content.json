@@ -1,0 +1,67 @@
+{
+  "presentation_title": "bangalore municipal corporation",
+  "theme": "modern",
+  "slides": [
+    {
+      "slide_number": 1,
+      "title": "Governance of the Global Tech Hub: The Bruhat Bengaluru Mahanagara Palike (BBMP)",
+      "slide_type": "intro",
+      "subtitle": "A Strategic Overview of Administrative Infrastructure, Fiscal Management, and Urban Development in India's Silicon Valley."
+    },
+    {
+      "slide_number": 2,
+      "title": "Managing a Megacity: BBMP\u2019s Administrative Scale & Zonal Governance",
+      "slide_type": "bullet_points",
+      "bullets": [
+        "Extensive Jurisdiction: Overseeing an expansive urban landscape spanning 714 sq. km, balancing high-density technology corridors with historic residential zones.",
+        "Demographic Pressure: Serving a hyper-growth population exceeding 12.5 million residents, necessitating agile and scalable civic response systems.",
+        "Decentralized Zonal Model: Administration streamlined through 8 strategic zones\u2014including Mahadevapura and Bommanahalli\u2014to address localized infrastructure needs.",
+        "Grassroots Representation: Recent restructuring to 243 wards to improve local accountability and ensure granular service delivery at the neighborhood level."
+      ]
+    },
+    {
+      "slide_number": 3,
+      "title": "Fiscal Architecture: Revenue Streams Powering Bengaluru\u2019s Development",
+      "slide_type": "chart",
+      "data": {
+        "type": "pie_chart",
+        "labels": [
+          "State and Central Grants",
+          "Property Tax Revenue",
+          "Surcharges and Infrastructure Cesses",
+          "Non-Tax Internal Revenue"
+        ],
+        "values": [
+          48,
+          35,
+          12,
+          5
+        ],
+        "xlabel": "Revenue Source",
+        "ylabel": "Budgetary Share (%)"
+      }
+    },
+    {
+      "slide_number": 4,
+      "title": "The BBMP Scale of Impact: Operational Benchmarks and Asset Management",
+      "slide_type": "stat",
+      "bullets": [
+        "Solid Waste Management: Orchestrating the daily collection and scientific processing of 4,500+ metric tonnes of municipal solid waste.",
+        "Connectivity Matrix: Engineering and maintaining a massive 13,200 km road network, ranging from arterial highways to neighborhood lanes.",
+        "Ecological Stewardship: Direct management of 1,200+ public parks and the rejuvenation of 200+ lakes to enhance the city's climate resilience.",
+        "Public Healthcare Infrastructure: Operating a tiered network of 140+ Primary Health Centers and 6 major referral hospitals for affordable urban healthcare."
+      ]
+    },
+    {
+      "slide_number": 5,
+      "title": "Brand Bengaluru: The Roadmap for a Resilient and Smart Future",
+      "slide_type": "closing",
+      "bullets": [
+        "Strategic Vision: The 'Brand Bengaluru' initiative focusing on multi-modal transport integration, waste-to-energy solutions, and expanded green cover.",
+        "Digital Transformation: Implementation of GIS-enabled property tax mapping and automated 'Namma Bengaluru' services for 100% transparency.",
+        "Climate Adaptation: Utilizing the Integrated Command and Control Centre (ICCC) for real-time flood monitoring and disaster response synchronization.",
+        "Infrastructure Longevity: Prioritizing 'White Topping' concrete surfacing on major corridors to reduce lifecycle maintenance costs and improve road durability."
+      ]
+    }
+  ]
+}

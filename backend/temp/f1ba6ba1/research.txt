@@ -1,0 +1,68 @@
+{
+  "topic": "bangalore municipal corporation",
+  "sources_used": [],
+  "verified_content": "Research data for bangalore municipal corporation was unavailable at scraping time.",
+  "slides": [
+    {
+      "slide_number": 1,
+      "title": "BBMP: Powering the Silicon Valley of India",
+      "slide_type": "intro",
+      "subtitle": "An overview of the Bruhat Bengaluru Mahanagara Palike (BBMP) administration and impact."
+    },
+    {
+      "slide_number": 2,
+      "title": "Administrative Scale and Governance",
+      "slide_type": "bullet_points",
+      "bullets": [
+        "Jurisdiction: Managing an urban area of approximately 714 sq. km.",
+        "Demographics: Serving a diverse population of over 12 million residents.",
+        "Zonal Structure: Divided into 8 zones (e.g., Bommanahalli, Mahadevapura, Yelahanka) for localized administration.",
+        "Expansion: Ward count recently restructured to 243 wards to improve grassroots representation."
+      ]
+    },
+    {
+      "slide_number": 3,
+      "title": "Financial Landscape: FY 2023-24 Budget",
+      "slide_type": "chart",
+      "data": {
+        "type": "pie_chart",
+        "labels": [
+          "State/Central Grants",
+          "Property Tax",
+          "Surcharges and Cesses",
+          "Other Internal Revenue"
+        ],
+        "values": [
+          48,
+          35,
+          12,
+          5
+        ],
+        "xlabel": "Revenue Source",
+        "ylabel": "Share (%)"
+      }
+    },
+    {
+      "slide_number": 4,
+      "title": "Operational Hard Statistics",
+      "slide_type": "stat",
+      "bullets": [
+        "Solid Waste: Processing ~4,500 metric tonnes of municipal waste daily.",
+        "Road Infrastructure: Maintenance of a 13,200 km road network.",
+        "Green Assets: Management of 1,200+ parks and approximately 200+ lakes.",
+        "Public Health: Overseeing 140+ Primary Health Centers and 6 major referral hospitals."
+      ]
+    },
+    {
+      "slide_number": 5,
+      "title": "Modernization and Future Outlook",
+      "slide_type": "closing",
+      "bullets": [
+        "Brand Bengaluru: Multi-billion rupee initiative focusing on traffic, environment, and waste management.",
+        "Digital Governance: GIS-based property tax mapping for 100% collection efficiency.",
+        "Climate Resilience: Deployment of the Integrated Command and Control Centre (ICCC) for real-time flood monitoring.",
+        "Infrastructure: Focus on 'White Topping' for long-term road durability and reduced maintenance costs."
+      ]
+    }
+  ]
+}

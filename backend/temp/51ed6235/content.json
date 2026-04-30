@@ -1,0 +1,65 @@
+{
+  "presentation_title": "ai in chemicals",
+  "theme": "modern",
+  "slides": [
+    {
+      "slide_number": 1,
+      "title": "Current: The Future of AI-Driven Banking",
+      "slide_type": "intro",
+      "subtitle": "Leveraging digital innovation as the #1 banking app for paychecks."
+    },
+    {
+      "slide_number": 2,
+      "title": "Biometric Security & AI Integration",
+      "slide_type": "bullet_points",
+      "bullets": [
+        "Face ID: Automated biometric authentication for account security.",
+        "Passkey Deployment: Advanced cryptographic security to replace traditional passwords.",
+        "Real-time System Notifications: Intelligent monitoring of account activity and security settings."
+      ]
+    },
+    {
+      "slide_number": 3,
+      "title": "Liquidity and Advance Capital",
+      "slide_type": "stat",
+      "data": {
+        "type": "bar_chart",
+        "labels": [
+          "Standard Advance",
+          "Current Max Advance"
+        ],
+        "values": [
+          0,
+          750
+        ],
+        "xlabel": "Service Tier",
+        "ylabel": "Amount ($)"
+      },
+      "bullets": [
+        "Access up to $750 in paycheck advances for eligible users.",
+        "Finco Advance LLC provides technology-driven financial options.",
+        "Instant qualification based on paycheck direct deposit history."
+      ]
+    },
+    {
+      "slide_number": 4,
+      "title": "Institutional Reliability & Infrastructure",
+      "slide_type": "bullet_points",
+      "bullets": [
+        "FDIC-Insured: High-level protection for user funds through partner banks.",
+        "Global Utility: Integrated card services usable across international networks.",
+        "Zero Thresholds: No minimum or maximum balance requirements for account maintenance."
+      ]
+    },
+    {
+      "slide_number": 5,
+      "title": "Onboarding & System Deployment",
+      "slide_type": "closing",
+      "bullets": [
+        "Streamlined mobile-first sign-up and card arrival tracking.",
+        "Full integration of Spend, Save, Invest, and Advance modules.",
+        "Secure login infrastructure managed via the Current Support Center."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+{
+  "topic": "ai in chemicals",
+  "sources_used": [
+    "https://support.current.com/hc/en-us",
+    "https://current.com/"
+  ],
+  "verified_content": "\n\n--- Source: https://support.current.com/hc/en-us ---\nTitle: Current Support Center\n\nURL Source: https://support.current.com/hc/en-us\n\nMarkdown Content:\nCurrent Support Center\n===============\n[Skip to main content](https://support.current.com/hc/en-us#main-content)\n\n[![Image 1: Logo](https://support.current.com/hc/theming_assets/01HZPCDBKDG10DK7K9CFT3K35K)](https://support.current.com/hc/en-us \"Home\")\n\n*   [Home](https://support.current.com/hc)\n*   [Accounts](https://support.current.com/hc/en-us/categories/360001357774-Accounts)\n    *   [Getting Started](https://support.current.com/hc/en-us/sections/360003247253-Getting-Started)\n        *   [How to set up Face ID on your account](https://support.current.com/hc/en-us/articles/40931732217627-How-to-set-up-Face-ID-on-your-account)\n        *   [Partner Bank Updates](https://support.current.com/hc/en-us/articles/36079863718811-Partner-Bank-Updates)\n        *   [TextNow Promotion](https://support.current.com/hc/en-us/articles/33289025095835-TextNow-Promotion)\n        *   [Make Your Account More Secure By Adding a Passkey](https://support.current.com/hc/en-us/articles/28005905409307-Make-Your-Account-More-Secure-By-Adding-a-Passkey)\n        *   [How do I manage the notification settings for my Current Account?](https://support.current.com/hc/en-us/articles/4410971927707-How-do-I-manage-the-notification-settings-for-my-Current-Account)\n        *   [What are Current's Account Agreements?](https://support.current.com/hc/en-us/articles/4408628384795-What-are-Current-s-Account-Agreements)\n        *   [How do I log in to my Current Account?](https://support.current.com/hc/en-us/articles/4408250104859-How-do-I-log-in-to-my-Current-Account)\n        *   [What's Current?](https://support.current.com/hc/en-us/articles/4408090848411-What-s-Current)\n        *   [Is there a minimum or maximum to how much money I can have in my Current account?](https://support.current.com/hc/en-us/articles/1260806385630-Is-there-a-minimum-or-maximum-to-how-much-money-I-can-have-in-my-Current-account)\n        *   [How old do I have to be to open a Current Account?](https://support.current.com/hc/en-us/articles/4408091885851-How-old-do-I-have-to-be-to-open-a-Current-Account)\n        *   [Is Current available worldwide?](https://support.current.com/hc/en-us/articles/4408091407515-Is-Current-available-worldwide)\n        *   [Where can I use my Current card?](https://support.current.com/hc/en-us/articles/360003672993-Where-can-I-use-my-Current-card)\n        *   [Is Current secure?](https://support.current.com/hc/en-us/articles/360003647434-Is-Current-secure)\n        *   [Are my funds FDIC insured?](https://support.current.com/hc/en-us/articles/4408091199899-Are-my-funds-FDIC-insured)\n        *   [When will my Current card arrive?](https://support.current.com/hc/en-us/articles/4408091139227-When-will-my-Current-card-arrive)\n        *   [What do I need to sign up for Current?](https://support.current.com/hc/en-us/articles/360017435514-What-do-I-need-to-sign-up-for-Current)\n        *   [What ty\n\n--- Source: https://current.com/ ---\nTitle: Current | Future of Banking\n\nURL Source: https://current.com/\n\nMarkdown Content:\nCurrent | Future of Banking\n===============\n\n*   [Spend](https://current.com/spend/)\n*   [Save](https://current.com/save/)\n*   [Invest](https://current.com/invest/)\n*   [Advance](https://current.com/advance/)\n\n[](https://current.com/ \"Go to home - Current.com\")\n\n*   [About](https://current.com/about-us/)\n*   [Help](https://support.current.com/hc/en-us)\n\nGet Started\n\nGet started\n\n*   [Spend](https://current.com/spend/)\n*   [Save](https://current.com/save/)\n*   [Invest](https://current.com/invest/)\n*   [Advance](https://current.com/advance/)\n\n*   [About](https://current.com/about-us/)\n[Help](https://support.current.com/hc/en-us)\n\nGet started\n\n![Image 14: Illustration of hand pointing at crypto coins](https://current.com/images/home-mobile-1.webp)\n\n![Image 15: Illustration of hand pointing at crypto coins](https://current.com/images/home-mobile-2.webp)\n\n![Image 16: Illustration of hand pointing at crypto coins](https://current.com/images/home-mobile-3.webp)\n\n![Image 17: Illustration of hand pointing at crypto coins](https://current.com/images/home-mobile-4.webp)\n\n![Image 18: Illustration of hand pointing at crypto coins](https://current.com/images/home-mobile-5.webp)\n\nGet ahead.\n\nGet Current.\n\n It\u2019s the #1 best banking app for your paycheck. \n\nGet ahead.\n\nGet ahead.\n\nGet Current.\n\nGet Current.\n\n It\u2019s the #1 best banking app for your paycheck. \n\n It\u2019s the #1 best banking app for your paycheck. \n\nAdvance up\n\nto $750\n\n Once you qualify by adding your paycheck.  \u24d8 \n\n### Paycheck Advance Disclosures\n\nPaycheck Advance is for eligible customers only. Your actual available Paycheck Advance amount will be displayed to you in the mobile app and may change from time to time. Conditions and eligibility may vary and are subject to change at any time, at the sole discretion of Finco Advance LLC, which offers this optional feature. Finco Advance LLC is a financial technology company, not a bank. For more information, please refer to [Paycheck Advance Terms and Conditions](https://current.com/docs/paycheck_advance_terms/).\n\nAdvance up\n\nAdvance up\n\nto $750\n\nto $750\n\n Once you qualify by adding your paycheck.  \u24d8 \n\n### Paycheck Advance Disclosures\n\nPaycheck Advance is for eligible customers only. Your actual available Paycheck Advance amount will be displayed to you in the mobile app and may change from time to time. Conditions and eligibility may vary and are subject to change at any time, at the sole discretion of Finco Advance LLC, which offers this optional feature. Finco Advance LLC is a financial technology company, not a bank. For more information, please refer to [Paycheck Advance Terms and Conditions](https://current.com/docs/paycheck_advance_terms/).\n\n Once you qualify by adding your paycheck.  \u24d8 \n\n### Paycheck Advance Disclosures\n\nPaycheck Advance is for eligible customers only. Your actual available Paycheck Advance amount will be displayed to you in the mobile app and ",
+  "slides": [
+    {
+      "slide_number": 1,
+      "title": "Current: The Future of AI-Driven Banking",
+      "slide_type": "intro",
+      "subtitle": "Leveraging digital innovation as the #1 banking app for paychecks."
+    },
+    {
+      "slide_number": 2,
+      "title": "Biometric Security & AI Integration",
+      "slide_type": "bullet_points",
+      "bullets": [
+        "Face ID: Automated biometric authentication for account security.",
+        "Passkey Deployment: Advanced cryptographic security to replace traditional passwords.",
+        "Real-time System Notifications: Intelligent monitoring of account activity and security settings."
+      ]
+    },
+    {
+      "slide_number": 3,
+      "title": "Liquidity and Advance Capital",
+      "slide_type": "stat",
+      "data": {
+        "type": "bar_chart",
+        "labels": [
+          "Standard Advance",
+          "Current Max Advance"
+        ],
+        "values": [
+          0,
+          750
+        ],
+        "xlabel": "Service Tier",
+        "ylabel": "Amount ($)"
+      },
+      "bullets": [
+        "Access up to $750 in paycheck advances for eligible users.",
+        "Finco Advance LLC provides technology-driven financial options.",
+        "Instant qualification based on paycheck direct deposit history."
+      ]
+    },
+    {
+      "slide_number": 4,
+      "title": "Institutional Reliability & Infrastructure",
+      "slide_type": "bullet_points",
+      "bullets": [
+        "FDIC-Insured: High-level protection for user funds through partner banks.",
+        "Global Utility: Integrated card services usable across international networks.",
+        "Zero Thresholds: No minimum or maximum balance requirements for account maintenance."
+      ]
+    },
+    {
+      "slide_number": 5,
+      "title": "Onboarding & System Deployment",
+      "slide_type": "closing",
+      "bullets": [
+        "Streamlined mobile-first sign-up and card arrival tracking.",
+        "Full integration of Spend, Save, Invest, and Advance modules.",
+        "Secure login infrastructure managed via the Current Support Center."
+      ]
+    }
+  ]
+}

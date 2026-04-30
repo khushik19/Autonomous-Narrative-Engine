@@ -1,0 +1,71 @@
+{
+  "topic": "spliting of bangalore municipal corporation into five corporations",
+  "sources_used": [],
+  "verified_content": "Research data for spliting of bangalore municipal corporation into five corporations was unavailable at scraping time.",
+  "slides": [
+    {
+      "slide_number": 1,
+      "title": "Restructuring Bengaluru: The Case for Five Corporations",
+      "slide_type": "intro",
+      "subtitle": "Decentralizing the Bruhat Bengaluru Mahanagara Palike (BBMP) for enhanced urban governance and service delivery."
+    },
+    {
+      "slide_number": 2,
+      "title": "Scaling Down for Efficiency",
+      "slide_type": "chart",
+      "data": {
+        "type": "bar_chart",
+        "labels": [
+          "Current (1 Corp)",
+          "Proposed (Avg/Corp)"
+        ],
+        "values": [
+          13.5,
+          2.7
+        ],
+        "xlabel": "Governance Entities",
+        "ylabel": "Population (Millions)"
+      },
+      "bullets": [
+        "BBMP currently manages 13.5M+ residents under one umbrella.",
+        "The split targets a manageable 2.5M - 3M residents per corporation.",
+        "Modeled after London and Tokyo's multi-corporation systems."
+      ]
+    },
+    {
+      "slide_number": 3,
+      "title": "The Five-Entity Architecture",
+      "slide_type": "bullet_points",
+      "bullets": [
+        "Central Bengaluru: Focusing on heritage zones and the Central Business District.",
+        "North, South, East, and West: Independent corporations with dedicated Mayors and Commissioners.",
+        "Greater Bengaluru Authority (GBA): A tier-two body to coordinate inter-agency planning.",
+        "Localized Budgeting: Direct financial control for faster infrastructure project execution.",
+        "Administrative Span: Reduction from 243 wards per commissioner to roughly 48-50 per entity."
+      ]
+    },
+    {
+      "slide_number": 4,
+      "title": "Governance by the Numbers",
+      "slide_type": "stat",
+      "bullets": [
+        "712 sq. km: Total area to be redistributed among five leaner administrative units.",
+        "198 to 243: The increase in wards requiring localized oversight to prevent urban decay.",
+        "30% Faster Response: Targeted improvement in grievance redressal for civic issues.",
+        "4.5% Growth: Bengaluru\u2019s annual population surge necessitates decentralized planning.",
+        "B.S. Patil Committee: Primary recommendation for splitting based on the 2015 restructuring report."
+      ]
+    },
+    {
+      "slide_number": 5,
+      "title": "Impact: From Monolith to Metropolis",
+      "slide_type": "closing",
+      "subtitle": "Empowering local leadership to solve global-scale urban challenges.",
+      "bullets": [
+        "Greater accountability through hyper-local municipal leadership.",
+        "Optimized revenue collection and waste management logistics.",
+        "Sustainable growth path for India's Silicon Valley."
+      ]
+    }
+  ]
+}

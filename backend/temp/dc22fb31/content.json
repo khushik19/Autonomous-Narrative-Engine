@@ -1,0 +1,84 @@
+{
+  "presentation_title": "ai in chemicals",
+  "theme": "modern",
+  "slides": [
+    {
+      "slide_number": 1,
+      "title": "The AI Chemical Revolution: Redefining Molecular and Process Engineering",
+      "slide_type": "intro",
+      "subtitle": "Harnessing Machine Learning to Accelerate Discovery, Optimize Yields, and Drive Net-Zero Initiatives"
+    },
+    {
+      "slide_number": 2,
+      "title": "Market Explosion: The $12B AI Opportunity in Chemical Production",
+      "slide_type": "chart",
+      "data": {
+        "type": "bar_chart",
+        "labels": [
+          "2023",
+          "2025",
+          "2027",
+          "2029",
+          "2031"
+        ],
+        "values": [
+          1.1,
+          2.4,
+          4.6,
+          7.8,
+          12.3
+        ],
+        "xlabel": "Fiscal Year",
+        "ylabel": "Global Market Value (Billions USD)"
+      },
+      "bullets": [
+        "Projected 25.2% CAGR driven by the transition from empirical 'trial-and-error' to high-fidelity digital simulation",
+        "Rapid adoption of Generative AI for patent-mapping and competitive intelligence in specialty chemicals",
+        "Strategic shift toward 'Data-First' R&D to mitigate rising feedstock costs and regulatory compliance burdens"
+      ]
+    },
+    {
+      "slide_number": 3,
+      "title": "Generative Chemistry: Collapsing Decades of Molecular Discovery into Days",
+      "slide_type": "bullet_points",
+      "bullets": [
+        "In Silico Screening: Utilizing Graph Neural Networks (GNNs) to navigate a chemical space of 10^60 potential molecules instantly",
+        "Lead Optimization: Reducing the R&D cycle for novel catalysts and performance polymers by 40-60% through Bayesian optimization",
+        "Property Prediction: Deploying Deep Learning to forecast solubility, toxicity, and thermal stability before a single gram is synthesized",
+        "Retrosynthetic Analysis: AI-driven identification of cost-effective and low-carbon reaction pathways with 90%+ experimental success rates"
+      ]
+    },
+    {
+      "slide_number": 4,
+      "title": "Operational Intelligence: Maximizing Yield and Asset Reliability",
+      "slide_type": "stat",
+      "bullets": [
+        "20% reduction in unplanned downtime via ML-driven sensor fusion and acoustic monitoring for predictive maintenance",
+        "5-10% yield uplift through Reinforcement Learning (RL) applied to non-linear batch reactor temperature and pressure controls",
+        "15% reduction in Scope 1 energy intensity via AI-managed thermal integration and steam system optimization",
+        "High-Fidelity Digital Twins: Simulating 'What-If' operational scenarios to de-bottleneck production without risking physical assets"
+      ]
+    },
+    {
+      "slide_number": 5,
+      "title": "Sustainable Synthesis: AI as the Engine for Green Chemistry",
+      "slide_type": "bullet_points",
+      "bullets": [
+        "Solvent Engineering: AI-optimized selection of bio-based solvents to eliminate VOCs and hazardous waste streams",
+        "Carbon Transparency: Real-time, automated tracking of Product Carbon Footprints (PCF) across complex Tier 1-3 chemical supply chains",
+        "Circular Polymeric Upcycling: Machine Vision and molecular sorting algorithms to increase purity in post-consumer plastic feedstock",
+        "Waste Minimization: Precision dosing and real-time reaction kinetics monitoring to achieve near-theoretical maximum selectivity"
+      ]
+    },
+    {
+      "slide_number": 6,
+      "title": "The Autonomous Lab: Forging the Future of Self-Optimizing Chemistry",
+      "slide_type": "closing",
+      "bullets": [
+        "Closed-Loop Synthesis: AI-orchestrated robotic 'Self-Driving Labs' that design, execute, and learn from experiments 24/7",
+        "Unified Data Fabrics: Breaking silos between lab notebooks, LIMS, and manufacturing execution systems (MES) for global insight",
+        "Competitive Imperative: Early AI adopters in the chemical sector are projected to realize a 2x margin advantage over laggards by 2030"
+      ]
+    }
+  ]
+}

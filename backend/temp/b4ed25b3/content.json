@@ -1,0 +1,112 @@
+{
+  "presentation_title": "ai",
+  "theme": "modern",
+  "slides": [
+    {
+      "slide_number": 1,
+      "title": "The AI Renaissance: Architecting the New Industrial Age",
+      "slide_type": "intro",
+      "subtitle": "Scaling cognitive capacity and operational efficiency at the velocity of silicon-based logic."
+    },
+    {
+      "slide_number": 2,
+      "title": "Hyper-Growth: The Multi-Trillion Dollar AI Economic Engine",
+      "slide_type": "chart",
+      "data": {
+        "type": "bar_chart",
+        "labels": [
+          "2023",
+          "2025",
+          "2027",
+          "2030"
+        ],
+        "values": [
+          150.2,
+          298.5,
+          738.1,
+          1847.5
+        ],
+        "xlabel": "Fiscal Year",
+        "ylabel": "Global AI Market Value (Billions USD)"
+      },
+      "bullets": [
+        "Projected Compound Annual Growth Rate (CAGR) of 37.3% signals a fundamental shift in global capital allocation.",
+        "AI is forecast to inject $15.7 trillion into the global economy by 2030, exceeding the current combined output of India and Germany."
+      ]
+    },
+    {
+      "slide_number": 3,
+      "title": "The AI-First Enterprise: Integration and Value Capture",
+      "slide_type": "bullet_points",
+      "bullets": [
+        "Ubiquitous Integration: 72% of global firms have transitioned AI from experimental labs to core business functions.",
+        "Capital Prioritization: 40% of organizations are aggressively expanding dedicated AI budgets to secure a competitive 'intelligence moat'.",
+        "Functional Dominance: Marketing, Sales, and Product Development account for 79% of successful AI implementation cases.",
+        "Proven Profitability: Early adopters report an average ROI of 2.5x, transforming AI from a cost center into a primary revenue driver."
+      ]
+    },
+    {
+      "slide_number": 4,
+      "title": "Generative AI: Unlocking a 10x Productivity Paradigm",
+      "slide_type": "stat",
+      "bullets": [
+        "Consumer Velocity: ChatGPT reached 100 million active users in 60 days, the fastest technology adoption curve in history.",
+        "Workflow Transformation: Generative models can automate or optimize tasks that currently consume 70% of the average employee's work week.",
+        "Developer Velocity: Software engineers leveraging AI coding assistants complete complex architecture tasks 55% faster with fewer syntax errors.",
+        "The Compute Arms Race: Frontier LLM training costs have skyrocketed from $10M to over $100M as model complexity scales exponentially."
+      ]
+    },
+    {
+      "slide_number": 5,
+      "title": "Synergistic Intelligence: Reimagining the Future of Work",
+      "slide_type": "chart",
+      "data": {
+        "type": "pie_chart",
+        "labels": [
+          "AI-Augmented Roles",
+          "Direct Role Replacement",
+          "AI-Native New Roles"
+        ],
+        "values": [
+          60,
+          15,
+          25
+        ],
+        "xlabel": "Workforce Evolution",
+        "ylabel": "Percentage (%)"
+      },
+      "bullets": [
+        "Augmentation over Displacement: 60% of roles will be enhanced by AI, focusing human talent on strategy, empathy, and complex problem-solving.",
+        "Universal Impact: 80% of the modern workforce will see at least 10% of their daily tasks automated by Large Language Models (LLMs)."
+      ]
+    },
+    {
+      "slide_number": 6,
+      "title": "Silicon Scarcity: The Infrastructure Powering the AI Boom",
+      "slide_type": "bullet_points",
+      "bullets": [
+        "Compute Deficit: Demand for high-performance AI GPUs currently exceeds global production capacity by a factor of 3x.",
+        "Processing Intensity: Training the next generation of multimodal models requires sustained compute power exceeding 10^25 FLOPs.",
+        "The Energy Challenge: AI data center power requirements are set to double by 2026, driving a massive surge in renewable energy demand.",
+        "Hardware Diversification: The market for custom AI-specific ASICs is growing at 20% annually to bypass traditional hardware bottlenecks."
+      ]
+    },
+    {
+      "slide_number": 7,
+      "title": "Navigating the AI Frontier: Governance, Privacy, and Trust",
+      "slide_type": "bullet_points",
+      "bullets": [
+        "Security Imperative: 55% of leaders identify data leakage and adversarial AI attacks as the primary barriers to deployment.",
+        "The Accuracy Gap: Hallucination rates in specialized technical domains persist at 3-5%, necessitating 'Human-in-the-Loop' verification.",
+        "Intellectual Property: A 400% increase in AI-related copyright litigation is forcing a global re-evaluation of data provenance and fair use.",
+        "Talent Scarcity: The lack of specialized AI engineering and prompt engineering talent remains the #1 inhibitor to enterprise scaling."
+      ]
+    },
+    {
+      "slide_number": 8,
+      "title": "The Intelligence Imperative: Leading in an AI-Driven Future",
+      "slide_type": "closing",
+      "subtitle": "In the era of autonomous intelligence, the only existential risk is failing to adapt to the AI-first economy."
+    }
+  ]
+}

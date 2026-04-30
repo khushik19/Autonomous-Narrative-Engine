@@ -1,0 +1,70 @@
+{
+  "presentation_title": "spliting of bangalore municipal corporation into five corporations",
+  "theme": "modern",
+  "slides": [
+    {
+      "slide_number": 1,
+      "title": "The Pentagonal Governance Model: Splitting BBMP for a Global Bengaluru",
+      "slide_type": "intro",
+      "subtitle": "A strategic blueprint to decentralize the Bruhat Bengaluru Mahanagara Palike into five autonomous corporations for agile urban management."
+    },
+    {
+      "slide_number": 2,
+      "title": "Optimizing the Governance-to-Citizen Ratio",
+      "slide_type": "chart",
+      "data": {
+        "type": "bar_chart",
+        "labels": [
+          "Current BBMP Monolith",
+          "Proposed Five-Way Split"
+        ],
+        "values": [
+          13.5,
+          2.7
+        ],
+        "xlabel": "Administrative Structure",
+        "ylabel": "Population per Corporation (Millions)"
+      },
+      "bullets": [
+        "The current monolithic BBMP oversees 13.5M+ residents, leading to systemic administrative paralysis and diluted oversight.",
+        "The split targets a manageable threshold of 2.5M - 3M residents per corporation to mirror high-efficiency global cities.",
+        "Modeled on the proven success of multi-corporation systems in London and Tokyo, ensuring governance scales with population density."
+      ]
+    },
+    {
+      "slide_number": 3,
+      "title": "The Strategic Architecture of the Five-Way Split",
+      "slide_type": "bullet_points",
+      "bullets": [
+        "Zonal Autonomy: Creation of Central, North, South, East, and West corporations, each led by dedicated Mayors and Commissioners.",
+        "The Greater Bengaluru Authority (GBA): A tier-two coordinating body designed to synchronize inter-agency planning for transport and environment.",
+        "Fiscal Decentralization: Grants five independent budgets to allow for faster localized project approvals without central secretariat bottlenecks.",
+        "Operational Granularity: Reduces the administrative span from 243 wards per single commissioner to roughly 48-50 wards per entity.",
+        "Specialized Planning: Allows the Central corporation to focus on heritage/CBD issues while the East and North focus on high-growth tech corridors."
+      ]
+    },
+    {
+      "slide_number": 4,
+      "title": "Quantifying the Shift: Metrics of Decentralization",
+      "slide_type": "stat",
+      "bullets": [
+        "712 Square Kilometers: Total geographical footprint to be redistributed to ensure equitable resource allocation across all zones.",
+        "243 Localized Wards: Enhanced ward-level oversight to prevent urban decay and facilitate hyper-local infrastructure maintenance.",
+        "30% Redressal Acceleration: Projected improvement in grievance response times for water, waste, and road issues through localized command centers.",
+        "B.S. Patil Committee Framework: Alignment with the 2015 expert report identifying 'governance deficit' as the primary hurdle to city growth.",
+        "4.5% Annual Surge: Designing for Bengaluru's rapid expansion by creating elastic administrative units that can absorb future population growth."
+      ]
+    },
+    {
+      "slide_number": 5,
+      "title": "The Road Ahead: From Monolith to Modern Metropolis",
+      "slide_type": "closing",
+      "subtitle": "Transforming Bengaluru\u2019s governance into a resilient, five-pillar system for the 21st century.",
+      "bullets": [
+        "Enhanced accountability through competition between the five corporations on sustainability and livability indices.",
+        "Localized waste management and traffic logistics tailored to the specific geographical demands of each corporation.",
+        "Securing the economic future of India\u2019s Silicon Valley through institutional reform and administrative agility."
+      ]
+    }
+  ]
+}
